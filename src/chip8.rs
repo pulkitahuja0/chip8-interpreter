@@ -1,0 +1,300 @@
+use rand::Rng;
+use rand::rngs::ThreadRng;
+
+use crate::registers::Registers;
+use crate::stack::Stack;
+
+const MEMORY_SIZE: usize = 4096;
+
+pub struct Chip8 {
+    memory: [u8; MEMORY_SIZE],
+    register: Registers,
+    stack: Stack,
+    pc: u16,
+    rng: ThreadRng
+}
+
+
+
+fn panic_on_opcode(opcode: u16, pc: u16) {
+    panic!("Bad opcode {:#04X} at address {:#05X}", opcode, pc)
+}
+
+// Functions relating to bit operations
+fn create_nnn(b: u16, c: u16, d: u16) -> u16 {
+    ((b) << 8) | ((c) << 4) | (d)
+}
+
+fn create_nn(c: u16, d: u16) -> u16 {
+    (c << 4) | d
+}
+
+// TODO: handling bad registers
+impl Chip8 {
+    pub fn new(rom: &[u8]) -> Self {
+        let mut memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
+
+        // TODO: load fontset here
+
+        // TODO: Handle bad ROM
+        if 0x200 + rom.len() > MEMORY_SIZE {
+            panic!("Bad ROM detected");
+        }
+
+        memory[0x200..(0x200 + rom.len())].copy_from_slice(rom);
+
+        Self {
+            memory,
+            register: Registers::new(),
+            stack: Stack::new(),
+            pc: 0x200,
+            rng: rand::rng()
+        }
+    }
+
+    pub fn step(&mut self) {
+        let opcode = ((self.memory[self.pc as usize] as u16) << 8) | (self.memory[(self.pc + 1) as usize] as u16);
+        let pc = self.pc; // Address of current instruction
+
+        self.pc += 2; // Address of next instruction (use for stack)
+
+        let a = (opcode & 0xF000) >> 12;
+        let b = (opcode & 0x0F00) >> 8;
+        let c = (opcode & 0x00F0) >> 4;
+        let d = opcode & 0x000F;
+
+        match a {
+            0 => {
+                if b == 0 && c == 0xE {
+                    if d == 0 {
+                        // 00E0
+                        // TODO: Clear screen
+                    } else if d == 0xE {
+                        // 00EE
+                        self.pc = self.stack.return_subroutine();
+                    } else {
+                        panic_on_opcode(opcode, pc);
+                    }
+                } else {
+                    panic_on_opcode(opcode, pc);
+                }
+            }
+            1 => {
+                // 1NNN
+                let nnn = create_nnn(b, c, d);
+                if (nnn as usize) < MEMORY_SIZE {
+                    self.pc = nnn;
+                } else {
+                    panic_on_opcode(opcode, pc);
+                }
+            }
+            2 => {
+                // 2NNN
+                let nnn = create_nnn(b, c, d);
+                if (nnn as usize) < MEMORY_SIZE {
+                    self.stack.subroutine(self.pc);
+                    self.pc = nnn;
+                } else {
+                    panic_on_opcode(opcode, pc);
+                }
+            }
+            3 => {
+                // 3XNN
+                let nn = create_nn(c, d);
+                if self.register.get_v(b as u8) == nn as u8 {
+                    self.pc += 2;
+                }
+            }
+            4 => {
+                // 4XNN
+                let nn = create_nn(c, d);
+                if self.register.get_v(b as u8) != nn as u8 {
+                    self.pc += 2;
+                }
+            }
+            5 => {
+                // 5XY0
+                if d == 0 {
+                    if self.register.get_v(b as u8) == self.register.get_v(c as u8) {
+                        self.pc += 2;
+                    }
+                } else {
+                    panic_on_opcode(opcode, pc);
+                }
+            }
+            6 => {
+                // 6XNN
+                let nn = create_nn(c, d);
+                self.register.set_v(b as u8, nn as u8);
+            }
+            7 => {
+                // 7XNN
+                let nn = create_nn(c, d);
+                self.register.set_v(b as u8, nn as u8);
+            }
+            8 => match d {
+                0 => {
+                    // 8XY0
+                    self.register.set_v(b as u8, self.register.get_v(c as u8));
+                }
+                1 => {
+                    // 8XY1
+                    self.register.set_v(b as u8, self.register.get_v(b as u8) | self.register.get_v(c as u8));
+                }
+                2 => {
+                    // 8XY2
+                    self.register.set_v(b as u8, self.register.get_v(b as u8) & self.register.get_v(c as u8));
+                }
+                3 => {
+                    // 8XY3
+                    self.register.set_v(b as u8, self.register.get_v(b as u8) ^ self.register.get_v(c as u8));
+                }
+                4 => {
+                    // 8XY4
+                    let vx = self.register.get_v(b as u8);
+                    let vy = self.register.get_v(c as u8);
+
+                    // Set flag register based on overflow
+                    if (vx as u16) + (vy as u16) > 0xFF {
+                        self.register.set_v(0xF, 1);
+                    } else {
+                        self.register.set_v(0xF, 0);
+                    }
+
+                    self.register.set_v(b as u8, vx.wrapping_add(vy));
+                }
+                5 => {
+                    // 8XY5
+                    // VX = VX - VY
+                    let vx = self.register.get_v(b as u8);
+                    let vy = self.register.get_v(c as u8);
+
+                    // Set flag register based on first operand being larger than second
+                    if vx > vy {
+                        self.register.set_v(0xF, 1);
+                    } else {
+                        self.register.set_v(0xF, 0);
+                    }
+
+                    self.register.set_v(b as u8, vx - vy);
+                }
+                6 => {
+                    // TODO: Shift (need to add configuration)
+                }
+                7 => {
+                    // 8XY7
+                    // VX = VY - VX
+                    let vx = self.register.get_v(b as u8);
+                    let vy = self.register.get_v(c as u8);
+
+                    // Set flag register based on first operand being larger than second
+                    if vy > vx {
+                        self.register.set_v(0xF, 1);
+                    } else {
+                        self.register.set_v(0xF, 0);
+                    }
+
+                    self.register.set_v(b as u8, vy - vx);
+                }
+                0xE => {
+                    // TODO: Shift (need to add configuration)
+                }
+                _ => {
+                    panic_on_opcode(opcode, pc);
+                }
+            }
+            9 => {
+                if d == 0 {
+                    if self.register.get_v(b as u8) != self.register.get_v(c as u8) {
+                        self.pc += 2;
+                    }
+                } else {
+                    panic_on_opcode(opcode, pc);
+                }
+            }
+            0xA => {
+                // ANNN
+                let nnn = create_nnn(b, c, d);
+                self.register.set_index_register(nnn);
+            }
+            0xB => {
+                // BNNN
+                let nnn = create_nnn(b, c, d);
+                let v0 = self.register.get_v(0);
+
+                if (((nnn as u8) + v0) as usize) < MEMORY_SIZE {
+                    self.pc = nnn + (v0 as u16);
+                } else {
+                    panic_on_opcode(opcode, pc);
+                }
+
+                // TODO: Add BXNN based off of config
+            }
+            0xC => {
+                // CXNN
+                let rand_val: u8 = self.rng.random();
+
+                let nn = create_nn(c, d);
+                let val = rand_val & (nn as u8);
+
+                self.register.set_v(b as u8, val);
+            }
+            0xD => {
+                // TODO: Display
+            }
+            0xE => {
+                // TODO: Input
+            }
+            0xF => match c {
+                1 => {
+                    if d == 0xE {
+                        // FX1E
+                        // TODO: config for ambiguous overflow behavior here
+                        self.register.set_index_register(self.register.get_index() + b);
+                    } else {
+                        panic_on_opcode(opcode, pc);
+                    }
+                }
+                2 => {
+                    if d == 9 {
+                        // FX29
+                        // TODO: Fonts
+                    } else {
+                        panic_on_opcode(opcode, pc);
+                    }
+                }
+                3 => {
+                    // FX33
+                    // TODO: Binary code to decimal conversion
+                }
+                5 => {
+                    if d == 5 {
+                        // FX55
+                        for j in 0..=b {
+                            self.memory[(self.register.get_index() + j) as usize] = self.register.get_v(j as u8);
+                        }
+                    } else {
+                        panic_on_opcode(opcode, pc);
+                    }
+                }
+                6 => {
+                    // TODO: Load from memory
+                    if d == 5 {
+                        // FX65
+                        for j in 0..=b {
+                            self.register.set_v(j as u8, self.memory[(self.register.get_index() + j) as usize])
+                        }
+                    } else {
+                        panic_on_opcode(opcode, pc);
+                    }
+                }
+                _ => {
+                    panic_on_opcode(opcode, pc);
+                }
+            }
+            _ => {
+                panic_on_opcode(opcode, pc);
+            }
+        }
+    }
+}
