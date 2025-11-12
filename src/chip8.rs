@@ -16,8 +16,8 @@ pub struct Chip8 {
 
 
 
-fn panic_on_opcode(opcode: u16, pc: u16) {
-    panic!("Bad opcode {:#04X} at address {:#05X}", opcode, pc)
+fn panic_on_opcode(opcode: u16, pc: u16) -> String {
+    format!("Bad opcode {:#04X} at address {:#05X}", opcode, pc)
 }
 
 // Functions relating to bit operations
@@ -52,7 +52,7 @@ impl Chip8 {
         }
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self) -> Result<(), String> {
         let opcode = ((self.memory[self.pc as usize] as u16) << 8) | (self.memory[(self.pc + 1) as usize] as u16);
         let pc = self.pc; // Address of current instruction
 
@@ -69,14 +69,16 @@ impl Chip8 {
                     if d == 0 {
                         // 00E0
                         // TODO: Clear screen
+                        return Ok(());
                     } else if d == 0xE {
                         // 00EE
                         self.pc = self.stack.return_subroutine();
+                        return Ok(());
                     } else {
-                        panic_on_opcode(opcode, pc);
+                        return Err(panic_on_opcode(opcode, pc));
                     }
                 } else {
-                    panic_on_opcode(opcode, pc);
+                    return Err(panic_on_opcode(opcode, pc));
                 }
             }
             1 => {
@@ -84,8 +86,9 @@ impl Chip8 {
                 let nnn = create_nnn(b, c, d);
                 if (nnn as usize) < MEMORY_SIZE {
                     self.pc = nnn;
+                    return Ok(());
                 } else {
-                    panic_on_opcode(opcode, pc);
+                    return Err(panic_on_opcode(opcode, pc));
                 }
             }
             2 => {
@@ -94,8 +97,9 @@ impl Chip8 {
                 if (nnn as usize) < MEMORY_SIZE {
                     self.stack.subroutine(self.pc);
                     self.pc = nnn;
+                    return Ok(());
                 } else {
-                    panic_on_opcode(opcode, pc);
+                    return Err(panic_on_opcode(opcode, pc));
                 }
             }
             3 => {
@@ -104,6 +108,7 @@ impl Chip8 {
                 if self.register.get_v(b as u8) == nn as u8 {
                     self.pc += 2;
                 }
+                return Ok(());
             }
             4 => {
                 // 4XNN
@@ -111,6 +116,7 @@ impl Chip8 {
                 if self.register.get_v(b as u8) != nn as u8 {
                     self.pc += 2;
                 }
+                return Ok(());
             }
             5 => {
                 // 5XY0
@@ -118,36 +124,43 @@ impl Chip8 {
                     if self.register.get_v(b as u8) == self.register.get_v(c as u8) {
                         self.pc += 2;
                     }
+                    return Ok(());
                 } else {
-                    panic_on_opcode(opcode, pc);
+                    return Err(panic_on_opcode(opcode, pc));
                 }
             }
             6 => {
                 // 6XNN
                 let nn = create_nn(c, d);
                 self.register.set_v(b as u8, nn as u8);
+                return Ok(());
             }
             7 => {
                 // 7XNN
                 let nn = create_nn(c, d);
                 self.register.set_v(b as u8, nn as u8);
+                return Ok(());
             }
             8 => match d {
                 0 => {
                     // 8XY0
                     self.register.set_v(b as u8, self.register.get_v(c as u8));
+                    return Ok(());
                 }
                 1 => {
                     // 8XY1
                     self.register.set_v(b as u8, self.register.get_v(b as u8) | self.register.get_v(c as u8));
+                    return Ok(());
                 }
                 2 => {
                     // 8XY2
                     self.register.set_v(b as u8, self.register.get_v(b as u8) & self.register.get_v(c as u8));
+                    return Ok(());
                 }
                 3 => {
                     // 8XY3
                     self.register.set_v(b as u8, self.register.get_v(b as u8) ^ self.register.get_v(c as u8));
+                    return Ok(());
                 }
                 4 => {
                     // 8XY4
@@ -162,6 +175,8 @@ impl Chip8 {
                     }
 
                     self.register.set_v(b as u8, vx.wrapping_add(vy));
+
+                    return Ok(());
                 }
                 5 => {
                     // 8XY5
@@ -177,9 +192,12 @@ impl Chip8 {
                     }
 
                     self.register.set_v(b as u8, vx - vy);
+
+                    return Ok(());
                 }
                 6 => {
                     // TODO: Shift (need to add configuration)
+                    return Ok(());
                 }
                 7 => {
                     // 8XY7
@@ -195,12 +213,15 @@ impl Chip8 {
                     }
 
                     self.register.set_v(b as u8, vy - vx);
+
+                    return Ok(());
                 }
                 0xE => {
                     // TODO: Shift (need to add configuration)
+                    return Ok(());
                 }
                 _ => {
-                    panic_on_opcode(opcode, pc);
+                    return Err(panic_on_opcode(opcode, pc));
                 }
             }
             9 => {
@@ -208,14 +229,17 @@ impl Chip8 {
                     if self.register.get_v(b as u8) != self.register.get_v(c as u8) {
                         self.pc += 2;
                     }
+                    return Ok(());
                 } else {
-                    panic_on_opcode(opcode, pc);
+                    return Err(panic_on_opcode(opcode, pc));
                 }
             }
             0xA => {
                 // ANNN
                 let nnn = create_nnn(b, c, d);
                 self.register.set_index_register(nnn);
+
+                return Ok(());
             }
             0xB => {
                 // BNNN
@@ -224,8 +248,9 @@ impl Chip8 {
 
                 if (((nnn as u8) + v0) as usize) < MEMORY_SIZE {
                     self.pc = nnn + (v0 as u16);
+                    return Ok(());
                 } else {
-                    panic_on_opcode(opcode, pc);
+                    return Err(panic_on_opcode(opcode, pc));
                 }
 
                 // TODO: Add BXNN based off of config
@@ -238,12 +263,16 @@ impl Chip8 {
                 let val = rand_val & (nn as u8);
 
                 self.register.set_v(b as u8, val);
+
+                return Ok(());
             }
             0xD => {
                 // TODO: Display
+                return Ok(());
             }
             0xE => {
                 // TODO: Input
+                return Ok(());
             }
             0xF => match c {
                 1 => {
@@ -251,21 +280,24 @@ impl Chip8 {
                         // FX1E
                         // TODO: config for ambiguous overflow behavior here
                         self.register.set_index_register(self.register.get_index() + b);
+                        return Ok(());
                     } else {
-                        panic_on_opcode(opcode, pc);
+                        return Err(panic_on_opcode(opcode, pc));
                     }
                 }
                 2 => {
                     if d == 9 {
                         // FX29
                         // TODO: Fonts
+                        return Ok(());
                     } else {
-                        panic_on_opcode(opcode, pc);
+                        return Err(panic_on_opcode(opcode, pc));
                     }
                 }
                 3 => {
                     // FX33
                     // TODO: Binary code to decimal conversion
+                    return Ok(());
                 }
                 5 => {
                     if d == 5 {
@@ -273,8 +305,9 @@ impl Chip8 {
                         for j in 0..=b {
                             self.memory[(self.register.get_index() + j) as usize] = self.register.get_v(j as u8);
                         }
+                        return Ok(());
                     } else {
-                        panic_on_opcode(opcode, pc);
+                        return Err(panic_on_opcode(opcode, pc));
                     }
                 }
                 6 => {
@@ -284,16 +317,18 @@ impl Chip8 {
                         for j in 0..=b {
                             self.register.set_v(j as u8, self.memory[(self.register.get_index() + j) as usize])
                         }
+
+                        return Ok(());
                     } else {
-                        panic_on_opcode(opcode, pc);
+                        return Err(panic_on_opcode(opcode, pc));
                     }
                 }
                 _ => {
-                    panic_on_opcode(opcode, pc);
+                    return Err(panic_on_opcode(opcode, pc));
                 }
             }
             _ => {
-                panic_on_opcode(opcode, pc);
+                return Err(panic_on_opcode(opcode, pc));
             }
         }
     }
