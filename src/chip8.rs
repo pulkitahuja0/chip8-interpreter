@@ -20,6 +20,10 @@ fn panic_on_opcode(opcode: u16, pc: u16) -> String {
     format!("Bad opcode {:#04X} at address {:#05X}", opcode, pc)
 }
 
+fn sub_error(opcode: u16, pc: u16, error: &str) -> String {
+    format!("{} at opcode {:#04X} at address {:#05X}", error, opcode, pc)
+}
+
 // Functions relating to bit operations
 fn create_nnn(b: u16, c: u16, d: u16) -> u16 {
     ((b) << 8) | ((c) << 4) | (d)
@@ -29,7 +33,7 @@ fn create_nn(c: u16, d: u16) -> u16 {
     (c << 4) | d
 }
 
-// TODO: handling bad registers
+// TODO: Error handling .set for bad registers
 impl Chip8 {
     pub fn new(rom: &[u8]) -> Self {
         let mut memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
@@ -105,18 +109,40 @@ impl Chip8 {
             3 => {
                 // 3XNN
                 let nn = create_nn(c, d);
-                if self.register.get_v(b as u8) == nn as u8 {
-                    self.pc += 2;
+                {
+                    let v = self.register.get_v(b as u8);
+                    match v {
+                        Ok(value) => {
+                            if value == nn as u8 {
+                                self.pc += 2;
+                            }
+
+                            return Ok(());
+                        }
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                 }
-                return Ok(());
             }
             4 => {
                 // 4XNN
                 let nn = create_nn(c, d);
-                if self.register.get_v(b as u8) != nn as u8 {
-                    self.pc += 2;
+                {
+                    let v = self.register.get_v(b as u8);
+                    match v {
+                        Ok(value) => {
+                            if value != nn as u8 {
+                                self.pc += 2;
+                            }
+
+                            return Ok(());
+                        }
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                 }
-                return Ok(());
             }
             5 => {
                 // 5XY0
@@ -164,8 +190,18 @@ impl Chip8 {
                 }
                 4 => {
                     // 8XY4
-                    let vx = self.register.get_v(b as u8);
-                    let vy = self.register.get_v(c as u8);
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    let vy = match self.register.get_v(c as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
 
                     // Set flag register based on overflow
                     if (vx as u16) + (vy as u16) > 0xFF {
@@ -181,8 +217,18 @@ impl Chip8 {
                 5 => {
                     // 8XY5
                     // VX = VX - VY
-                    let vx = self.register.get_v(b as u8);
-                    let vy = self.register.get_v(c as u8);
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    let vy = match self.register.get_v(c as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
 
                     // Set flag register based on first operand being larger than second
                     if vx > vy {
@@ -202,8 +248,18 @@ impl Chip8 {
                 7 => {
                     // 8XY7
                     // VX = VY - VX
-                    let vx = self.register.get_v(b as u8);
-                    let vy = self.register.get_v(c as u8);
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    let vy = match self.register.get_v(c as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
 
                     // Set flag register based on first operand being larger than second
                     if vy > vx {
@@ -226,7 +282,19 @@ impl Chip8 {
             }
             9 => {
                 if d == 0 {
-                    if self.register.get_v(b as u8) != self.register.get_v(c as u8) {
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    let vy = match self.register.get_v(c as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    if vx != vy {
                         self.pc += 2;
                     }
                     return Ok(());
@@ -244,7 +312,12 @@ impl Chip8 {
             0xB => {
                 // BNNN
                 let nnn = create_nnn(b, c, d);
-                let v0 = self.register.get_v(0);
+                let v0 = match self.register.get_v(0) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        return Err(sub_error(opcode, pc, err));
+                    }
+                };
 
                 if (((nnn as u8) + v0) as usize) < MEMORY_SIZE {
                     self.pc = nnn + (v0 as u16);
@@ -302,8 +375,17 @@ impl Chip8 {
                 5 => {
                     if d == 5 {
                         // FX55
+                        if b > 15 {
+                            return Err(panic_on_opcode(opcode, pc));
+                        }
+
                         for j in 0..=b {
-                            self.memory[(self.register.get_index() + j) as usize] = self.register.get_v(j as u8);
+                            self.memory[(self.register.get_index() + j) as usize] = match self.register.get_v(j as u8) {
+                                Ok(value) => value,
+                                Err(err) => {
+                                    return Err(sub_error(opcode, pc, err));
+                                }
+                            };
                         }
                         return Ok(());
                     } else {
@@ -315,7 +397,7 @@ impl Chip8 {
                     if d == 5 {
                         // FX65
                         for j in 0..=b {
-                            self.register.set_v(j as u8, self.memory[(self.register.get_index() + j) as usize])
+                            self.register.set_v(j as u8, self.memory[(self.register.get_index() + j) as usize]);
                         }
 
                         return Ok(());
