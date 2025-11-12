@@ -158,35 +158,113 @@ impl Chip8 {
             6 => {
                 // 6XNN
                 let nn = create_nn(c, d);
-                self.register.set_v(b as u8, nn as u8);
-                return Ok(());
+                match self.register.set_v(b as u8, nn as u8) {
+                    Ok(()) => {
+                        return Ok(());
+                    }
+                    Err(err) => {
+                        return Err(sub_error(opcode, pc, err));
+                    }
+                }
             }
             7 => {
                 // 7XNN
                 let nn = create_nn(c, d);
-                self.register.set_v(b as u8, nn as u8);
-                return Ok(());
+                match self.register.set_v(b as u8, nn as u8) {
+                    Ok(()) => {
+                        return Ok(());
+                    }
+                    Err(err) => {
+                        return Err(sub_error(opcode, pc, err));
+                    }
+                }
             }
             8 => match d {
                 0 => {
                     // 8XY0
-                    self.register.set_v(b as u8, self.register.get_v(c as u8));
-                    return Ok(());
+                    let vy = match self.register.get_v(c as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    match self.register.set_v(b as u8, vy) {
+                        Ok(()) => {
+                            return Ok(());
+                        },
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                 }
                 1 => {
                     // 8XY1
-                    self.register.set_v(b as u8, self.register.get_v(b as u8) | self.register.get_v(c as u8));
-                    return Ok(());
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    let vy = match self.register.get_v(c as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    match self.register.set_v(b as u8, vx | vy) {
+                        Ok(()) => {
+                            return Ok(());
+                        },
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                 }
                 2 => {
                     // 8XY2
-                    self.register.set_v(b as u8, self.register.get_v(b as u8) & self.register.get_v(c as u8));
-                    return Ok(());
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    let vy = match self.register.get_v(c as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    match self.register.set_v(b as u8, vx & vy) {
+                        Ok(()) => {
+                            return Ok(());
+                        },
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                 }
                 3 => {
                     // 8XY3
-                    self.register.set_v(b as u8, self.register.get_v(b as u8) ^ self.register.get_v(c as u8));
-                    return Ok(());
+                    let x = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    let y = match self.register.get_v(c as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    match self.register.set_v(b as u8, x ^ y) {
+                        Ok(()) => {
+                            return Ok(());
+                        },
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
                 }
                 4 => {
                     // 8XY4
@@ -205,14 +283,29 @@ impl Chip8 {
 
                     // Set flag register based on overflow
                     if (vx as u16) + (vy as u16) > 0xFF {
-                        self.register.set_v(0xF, 1);
+                        match self.register.set_v(0xF, 1) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        }
                     } else {
-                        self.register.set_v(0xF, 0);
+                        match self.register.set_v(0xF, 0) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        }
                     }
 
-                    self.register.set_v(b as u8, vx.wrapping_add(vy));
-
-                    return Ok(());
+                    match self.register.set_v(b as u8, vx.wrapping_add(vy)) {
+                        Ok(()) => {
+                            return Ok(());
+                        },
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                 }
                 5 => {
                     // 8XY5
@@ -232,14 +325,29 @@ impl Chip8 {
 
                     // Set flag register based on first operand being larger than second
                     if vx > vy {
-                        self.register.set_v(0xF, 1);
+                        match self.register.set_v(0xF, 1) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        };
                     } else {
-                        self.register.set_v(0xF, 0);
+                        match self.register.set_v(0xF, 0) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        };
                     }
 
-                    self.register.set_v(b as u8, vx - vy);
-
-                    return Ok(());
+                    match self.register.set_v(b as u8, vx - vy) {
+                        Ok(()) => {
+                            return Ok(());
+                        },
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                 }
                 6 => {
                     // TODO: Shift (need to add configuration)
@@ -263,14 +371,29 @@ impl Chip8 {
 
                     // Set flag register based on first operand being larger than second
                     if vy > vx {
-                        self.register.set_v(0xF, 1);
+                        match self.register.set_v(0xF, 1) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        }
                     } else {
-                        self.register.set_v(0xF, 0);
+                        match self.register.set_v(0xF, 0) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        }
                     }
 
-                    self.register.set_v(b as u8, vy - vx);
-
-                    return Ok(());
+                    match self.register.set_v(b as u8, vy - vx) {
+                        Ok(()) => {
+                            return Ok(());
+                        },
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                 }
                 0xE => {
                     // TODO: Shift (need to add configuration)
@@ -335,9 +458,14 @@ impl Chip8 {
                 let nn = create_nn(c, d);
                 let val = rand_val & (nn as u8);
 
-                self.register.set_v(b as u8, val);
-
-                return Ok(());
+                match self.register.set_v(b as u8, val) {
+                    Ok(()) => {
+                        return Ok(());
+                    },
+                    Err(err) => {
+                        return Err(sub_error(opcode, pc, err));
+                    }
+                }
             }
             0xD => {
                 // TODO: Display
@@ -397,7 +525,12 @@ impl Chip8 {
                     if d == 5 {
                         // FX65
                         for j in 0..=b {
-                            self.register.set_v(j as u8, self.memory[(self.register.get_index() + j) as usize]);
+                            match self.register.set_v(j as u8, self.memory[(self.register.get_index() + j) as usize]) {
+                                Ok(()) => {},
+                                Err(err) => {
+                                    return Err(sub_error(opcode, pc, err));
+                                }
+                            }
                         }
 
                         return Ok(());
