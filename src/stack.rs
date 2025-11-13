@@ -22,11 +22,15 @@ impl Stack {
         Ok(())
     }
 
-    pub fn return_subroutine(&mut self) -> u16 {
+    pub fn return_subroutine(&mut self) -> Result<u16, &'static str> {
+        if self.sp == 0 {
+            return Err("Stack underflow")
+        }
+
         self.sp -= 1;
         let last_addr = self.stack[self.sp as usize];
         self.stack[self.sp as usize] = 0;
 
-        last_addr
+        Ok(last_addr)
     }
 }

@@ -95,7 +95,13 @@ impl Chip8 {
                     } else if d == 0xE {
                         // 00EE
                         // Return subroutine
-                        self.pc = self.stack.return_subroutine();
+                        self.pc = match self.stack.return_subroutine() {
+                            Ok(value) => value,
+                            Err(err) => {
+                                // TODO: Config to ignore if stack underflow
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        };
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
