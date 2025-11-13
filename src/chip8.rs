@@ -502,21 +502,37 @@ impl Chip8 {
                 return Ok(());
             }
             0xB => {
-                // BNNN
-                // PC = NNN + V0
                 let nnn = create_nnn(b, c, d);
-                let v0 = match self.register.get_v(0) {
-                    Ok(value) => value,
-                    Err(err) => {
-                        return Err(sub_error(opcode, pc, err));
-                    }
-                };
 
-                if (((nnn as u8) + v0) as usize) < MEMORY_SIZE {
-                    self.pc = nnn + (v0 as u16);
+                if self.cfg.bxnn {
+                    // BXNN
+                    // PC = XNN + Vx
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
+
+                    self.pc = nnn + (vx as u16);
+
                     return Ok(());
                 } else {
-                    return Err(opcode_error(opcode, pc));
+                    // BNNN
+                    // PC = NNN + V0
+                    let v0 = match self.register.get_v(0) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+
+                    if (((nnn as u8) + v0) as usize) < MEMORY_SIZE {
+                        self.pc = nnn + (v0 as u16);
+                        return Ok(());
+                    } else {
+                        return Err(opcode_error(opcode, pc));
+                    }
                 }
 
                 // TODO: Add BXNN based off of config
