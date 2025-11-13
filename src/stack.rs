@@ -11,9 +11,15 @@ impl Stack {
         }
     }
 
-    pub fn subroutine(&mut self, pc: u16) {
+    pub fn subroutine(&mut self, pc: u16) -> Result<(), &'static str> {
         self.stack[self.sp as usize] = pc;
         self.sp += 1;
+
+        if self.sp > 15 {
+            return Err("Stack overflow")
+        }
+
+        Ok(())
     }
 
     pub fn return_subroutine(&mut self) -> u16 {

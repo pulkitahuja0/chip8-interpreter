@@ -120,7 +120,14 @@ impl Chip8 {
                 // Jump to address as subroutine (add to stack)
                 let nnn = create_nnn(b, c, d);
                 if (nnn as usize) < MEMORY_SIZE {
-                    self.stack.subroutine(self.pc);
+                    match self.stack.subroutine(self.pc) {
+                        Ok(()) => {
+                            self.pc = nnn;
+                        }
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                     self.pc = nnn;
                     return Ok(());
                 } else {
