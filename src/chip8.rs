@@ -306,7 +306,7 @@ impl Chip8 {
                     if !self.cfg.shift_in_place_8xy {
                         // Vx = Vy
                         let vy = self.register.get_v(c as u8);
-                        self.register.set_v(b as u8, vy) ;
+                        self.register.set_v(b as u8, vy);
                     }
                     let vx = self.register.get_v(b as u8);
                     // Shift left
