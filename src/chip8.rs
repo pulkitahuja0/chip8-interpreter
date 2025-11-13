@@ -609,8 +609,7 @@ impl Chip8 {
                             // TODO: timer
                         }
                         return Ok(());
-                    }
-                    else {
+                    } else {
                         return Err(opcode_error(opcode, pc));
                     }
                 }
