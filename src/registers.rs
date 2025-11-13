@@ -9,9 +9,9 @@ impl Registers {
         Self { v: [0; 16], i: 0 }
     }
 
-    // TODO: Add 12 bit wraparound check
     pub fn set_index_register(&mut self, i: u16) {
-        self.i = i;
+        // I will always be 12-bit
+        self.i = i & 0xFFF;
     }
 
     pub fn set_v(&mut self, register: u8, value: u8) -> Result<(), &'static str> {
