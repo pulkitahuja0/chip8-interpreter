@@ -540,6 +540,7 @@ impl Chip8 {
                     if d == 9 {
                         // FX29
                         // I = memory of character in Vx
+                        // TODO: Take last nibble of Vx to account for Vx > 0xF
                         match self.register.get_v(b as u8) {
                             Ok(vx) => {
                                 self.register.set_index_register((vx as u16) * 5);
