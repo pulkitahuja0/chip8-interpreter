@@ -74,6 +74,7 @@ impl Chip8 {
     }
 
     pub fn step(&mut self) -> Result<(), String> {
+        // TODO: Config to skip bad opcodes instead of error
         let opcode = ((self.memory[self.pc as usize] as u16) << 8)
             | (self.memory[(self.pc + 1) as usize] as u16);
         let pc = self.pc; // Address of current instruction
@@ -95,7 +96,13 @@ impl Chip8 {
                     } else if d == 0xE {
                         // 00EE
                         // Return subroutine
-                        self.pc = self.stack.return_subroutine();
+                        self.pc = match self.stack.return_subroutine() {
+                            Ok(value) => value,
+                            Err(err) => {
+                                // TODO: Config to ignore if stack underflow
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        };
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
@@ -120,7 +127,14 @@ impl Chip8 {
                 // Jump to address as subroutine (add to stack)
                 let nnn = create_nnn(b, c, d);
                 if (nnn as usize) < MEMORY_SIZE {
-                    self.stack.subroutine(self.pc);
+                    match self.stack.subroutine(self.pc) {
+                        Ok(()) => {
+                            self.pc = nnn;
+                        }
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    }
                     self.pc = nnn;
                     return Ok(());
                 } else {
@@ -208,9 +222,7 @@ impl Chip8 {
                 let nn = create_nn(c, d);
                 let vx = match self.register.get_v(b as u8) {
                     Ok(value) => value,
-                    Err(err) => {
-                        return Err(sub_error(opcode, pc, err))
-                    }
+                    Err(err) => return Err(sub_error(opcode, pc, err)),
                 };
                 match self.register.set_v(b as u8, vx + (nn as u8)) {
                     Ok(()) => {
