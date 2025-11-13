@@ -14,8 +14,8 @@ pub struct Chip8 {
     rng: ThreadRng,
 }
 
-fn panic_on_opcode(opcode: u16, pc: u16) -> String {
-    format!("Bad opcode {:#04X} at address {:#05X}", opcode, pc)
+fn opcode_error(opcode: u16, pc: u16) -> String {
+    sub_error(opcode, pc, "Bad opcode")
 }
 
 fn sub_error(opcode: u16, pc: u16, error: &str) -> String {
@@ -78,10 +78,10 @@ impl Chip8 {
                         self.pc = self.stack.return_subroutine();
                         return Ok(());
                     } else {
-                        return Err(panic_on_opcode(opcode, pc));
+                        return Err(opcode_error(opcode, pc));
                     }
                 } else {
-                    return Err(panic_on_opcode(opcode, pc));
+                    return Err(opcode_error(opcode, pc));
                 }
             }
             1 => {
@@ -91,7 +91,7 @@ impl Chip8 {
                     self.pc = nnn;
                     return Ok(());
                 } else {
-                    return Err(panic_on_opcode(opcode, pc));
+                    return Err(opcode_error(opcode, pc));
                 }
             }
             2 => {
@@ -102,7 +102,7 @@ impl Chip8 {
                     self.pc = nnn;
                     return Ok(());
                 } else {
-                    return Err(panic_on_opcode(opcode, pc));
+                    return Err(opcode_error(opcode, pc));
                 }
             }
             3 => {
@@ -151,7 +151,7 @@ impl Chip8 {
                     }
                     return Ok(());
                 } else {
-                    return Err(panic_on_opcode(opcode, pc));
+                    return Err(opcode_error(opcode, pc));
                 }
             }
             6 => {
@@ -399,7 +399,7 @@ impl Chip8 {
                     return Ok(());
                 }
                 _ => {
-                    return Err(panic_on_opcode(opcode, pc));
+                    return Err(opcode_error(opcode, pc));
                 }
             },
             9 => {
@@ -421,7 +421,7 @@ impl Chip8 {
                     }
                     return Ok(());
                 } else {
-                    return Err(panic_on_opcode(opcode, pc));
+                    return Err(opcode_error(opcode, pc));
                 }
             }
             0xA => {
@@ -445,7 +445,7 @@ impl Chip8 {
                     self.pc = nnn + (v0 as u16);
                     return Ok(());
                 } else {
-                    return Err(panic_on_opcode(opcode, pc));
+                    return Err(opcode_error(opcode, pc));
                 }
 
                 // TODO: Add BXNN based off of config
@@ -483,7 +483,7 @@ impl Chip8 {
                             .set_index_register(self.register.get_index() + b);
                         return Ok(());
                     } else {
-                        return Err(panic_on_opcode(opcode, pc));
+                        return Err(opcode_error(opcode, pc));
                     }
                 }
                 2 => {
@@ -492,7 +492,7 @@ impl Chip8 {
                         // TODO: Fonts
                         return Ok(());
                     } else {
-                        return Err(panic_on_opcode(opcode, pc));
+                        return Err(opcode_error(opcode, pc));
                     }
                 }
                 3 => {
@@ -504,7 +504,7 @@ impl Chip8 {
                     if d == 5 {
                         // FX55
                         if b > 15 {
-                            return Err(panic_on_opcode(opcode, pc));
+                            return Err(opcode_error(opcode, pc));
                         }
 
                         for j in 0..=b {
@@ -518,7 +518,7 @@ impl Chip8 {
                         }
                         return Ok(());
                     } else {
-                        return Err(panic_on_opcode(opcode, pc));
+                        return Err(opcode_error(opcode, pc));
                     }
                 }
                 6 => {
@@ -539,15 +539,15 @@ impl Chip8 {
 
                         return Ok(());
                     } else {
-                        return Err(panic_on_opcode(opcode, pc));
+                        return Err(opcode_error(opcode, pc));
                     }
                 }
                 _ => {
-                    return Err(panic_on_opcode(opcode, pc));
+                    return Err(opcode_error(opcode, pc));
                 }
             },
             _ => {
-                return Err(panic_on_opcode(opcode, pc));
+                return Err(opcode_error(opcode, pc));
             }
         }
     }
