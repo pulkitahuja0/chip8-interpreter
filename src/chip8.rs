@@ -168,7 +168,6 @@ impl Chip8 {
             5 => {
                 // 5XY0
                 // Skip if Vx == Vy
-                // TODO: Error handling here
                 if d == 0 {
                     let vx = match self.register.get_v(b as u8) {
                         Ok(value) => value,
