@@ -35,7 +35,27 @@ impl Chip8 {
     pub fn new(rom: &[u8]) -> Self {
         let mut memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 
-        // TODO: load fontset here
+        // Load fontset here
+        const FONTSET: [u8; 80] = [
+            0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+            0x20, 0x60, 0x20, 0x20, 0x70, // 1
+            0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+            0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+            0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+            0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+            0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+            0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+            0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+            0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+            0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+            0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+            0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+            0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+            0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+            0xF0, 0x80, 0xF0, 0x80, 0x80, // F
+        ];
+
+        memory[..FONTSET.len()].copy_from_slice(&FONTSET);
 
         // TODO: Handle bad ROM
         if 0x200 + rom.len() > MEMORY_SIZE {
@@ -519,7 +539,16 @@ impl Chip8 {
                 2 => {
                     if d == 9 {
                         // FX29
-                        // TODO: Fonts
+                        // I = memory of character in Vx
+                        // TODO: Take last nibble of Vx to account for Vx > 0xF
+                        match self.register.get_v(b as u8) {
+                            Ok(vx) => {
+                                self.register.set_index_register((vx as u16) * 5);
+                            }
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        }
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
