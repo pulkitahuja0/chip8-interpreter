@@ -75,6 +75,7 @@ impl Chip8 {
                         return Ok(());
                     } else if d == 0xE {
                         // 00EE
+                        // Return subroutine
                         self.pc = self.stack.return_subroutine();
                         return Ok(());
                     } else {
@@ -86,6 +87,7 @@ impl Chip8 {
             }
             1 => {
                 // 1NNN
+                // Jump to address
                 let nnn = create_nnn(b, c, d);
                 if (nnn as usize) < MEMORY_SIZE {
                     self.pc = nnn;
@@ -96,6 +98,7 @@ impl Chip8 {
             }
             2 => {
                 // 2NNN
+                // Jump to address as subroutine (add to stack)
                 let nnn = create_nnn(b, c, d);
                 if (nnn as usize) < MEMORY_SIZE {
                     self.stack.subroutine(self.pc);
@@ -107,6 +110,7 @@ impl Chip8 {
             }
             3 => {
                 // 3XNN
+                // Skip if Vx = NN
                 let nn = create_nn(c, d);
                 {
                     let v = self.register.get_v(b as u8);
@@ -126,6 +130,7 @@ impl Chip8 {
             }
             4 => {
                 // 4XNN
+                // Skip if Vx != NN
                 let nn = create_nn(c, d);
                 {
                     let v = self.register.get_v(b as u8);
@@ -145,6 +150,8 @@ impl Chip8 {
             }
             5 => {
                 // 5XY0
+                // Skip if Vx == Vy
+                // TODO: Error handling here
                 if d == 0 {
                     if self.register.get_v(b as u8) == self.register.get_v(c as u8) {
                         self.pc += 2;
@@ -156,6 +163,7 @@ impl Chip8 {
             }
             6 => {
                 // 6XNN
+                // Vx = NN
                 let nn = create_nn(c, d);
                 match self.register.set_v(b as u8, nn as u8) {
                     Ok(()) => {
@@ -168,6 +176,8 @@ impl Chip8 {
             }
             7 => {
                 // 7XNN
+                // Vx = Vx + NN
+                // TODO: Implement properly
                 let nn = create_nn(c, d);
                 match self.register.set_v(b as u8, nn as u8) {
                     Ok(()) => {
@@ -181,6 +191,7 @@ impl Chip8 {
             8 => match d {
                 0 => {
                     // 8XY0
+                    // Vx = Vy
                     let vy = match self.register.get_v(c as u8) {
                         Ok(value) => value,
                         Err(err) => {
@@ -198,6 +209,7 @@ impl Chip8 {
                 }
                 1 => {
                     // 8XY1
+                    // Vx = Vx | Vy
                     let vx = match self.register.get_v(b as u8) {
                         Ok(value) => value,
                         Err(err) => {
@@ -221,6 +233,7 @@ impl Chip8 {
                 }
                 2 => {
                     // 8XY2
+                    // Vx = Vx & Vy
                     let vx = match self.register.get_v(b as u8) {
                         Ok(value) => value,
                         Err(err) => {
@@ -244,6 +257,7 @@ impl Chip8 {
                 }
                 3 => {
                     // 8XY3
+                    // Vx = Vx XOR Vy
                     let x = match self.register.get_v(b as u8) {
                         Ok(value) => value,
                         Err(err) => {
@@ -267,6 +281,7 @@ impl Chip8 {
                 }
                 4 => {
                     // 8XY4
+                    // Vx = Vx + Vy
                     let vx = match self.register.get_v(b as u8) {
                         Ok(value) => value,
                         Err(err) => {
@@ -404,6 +419,9 @@ impl Chip8 {
             },
             9 => {
                 if d == 0 {
+                    // 9XY0
+                    // Skip if Vx != Vy
+                    // Vx = NN
                     let vx = match self.register.get_v(b as u8) {
                         Ok(value) => value,
                         Err(err) => {
@@ -426,6 +444,7 @@ impl Chip8 {
             }
             0xA => {
                 // ANNN
+                // I = NNN
                 let nnn = create_nnn(b, c, d);
                 self.register.set_index_register(nnn);
 
@@ -433,6 +452,7 @@ impl Chip8 {
             }
             0xB => {
                 // BNNN
+                // PC = NNN + V0
                 let nnn = create_nnn(b, c, d);
                 let v0 = match self.register.get_v(0) {
                     Ok(value) => value,
@@ -452,6 +472,7 @@ impl Chip8 {
             }
             0xC => {
                 // CXNN
+                // Vx = NN | Rand()
                 let rand_val: u8 = self.rng.random();
 
                 let nn = create_nn(c, d);
@@ -503,6 +524,7 @@ impl Chip8 {
                 5 => {
                     if d == 5 {
                         // FX55
+                        // Load memory -> registers
                         if b > 15 {
                             return Err(opcode_error(opcode, pc));
                         }
@@ -522,9 +544,9 @@ impl Chip8 {
                     }
                 }
                 6 => {
-                    // TODO: Load from memory
                     if d == 5 {
                         // FX65
+                        // Load registers -> memory
                         for j in 0..=b {
                             match self.register.set_v(
                                 j as u8,
