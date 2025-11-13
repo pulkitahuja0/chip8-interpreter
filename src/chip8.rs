@@ -11,10 +11,8 @@ pub struct Chip8 {
     register: Registers,
     stack: Stack,
     pc: u16,
-    rng: ThreadRng
+    rng: ThreadRng,
 }
-
-
 
 fn panic_on_opcode(opcode: u16, pc: u16) -> String {
     format!("Bad opcode {:#04X} at address {:#05X}", opcode, pc)
@@ -52,12 +50,13 @@ impl Chip8 {
             register: Registers::new(),
             stack: Stack::new(),
             pc: 0x200,
-            rng: rand::rng()
+            rng: rand::rng(),
         }
     }
 
     pub fn step(&mut self) -> Result<(), String> {
-        let opcode = ((self.memory[self.pc as usize] as u16) << 8) | (self.memory[(self.pc + 1) as usize] as u16);
+        let opcode = ((self.memory[self.pc as usize] as u16) << 8)
+            | (self.memory[(self.pc + 1) as usize] as u16);
         let pc = self.pc; // Address of current instruction
 
         self.pc += 2; // Address of next instruction (use for stack)
@@ -191,7 +190,7 @@ impl Chip8 {
                     match self.register.set_v(b as u8, vy) {
                         Ok(()) => {
                             return Ok(());
-                        },
+                        }
                         Err(err) => {
                             return Err(sub_error(opcode, pc, err));
                         }
@@ -214,7 +213,7 @@ impl Chip8 {
                     match self.register.set_v(b as u8, vx | vy) {
                         Ok(()) => {
                             return Ok(());
-                        },
+                        }
                         Err(err) => {
                             return Err(sub_error(opcode, pc, err));
                         }
@@ -237,7 +236,7 @@ impl Chip8 {
                     match self.register.set_v(b as u8, vx & vy) {
                         Ok(()) => {
                             return Ok(());
-                        },
+                        }
                         Err(err) => {
                             return Err(sub_error(opcode, pc, err));
                         }
@@ -260,7 +259,7 @@ impl Chip8 {
                     match self.register.set_v(b as u8, x ^ y) {
                         Ok(()) => {
                             return Ok(());
-                        },
+                        }
                         Err(err) => {
                             return Err(sub_error(opcode, pc, err));
                         }
@@ -284,14 +283,14 @@ impl Chip8 {
                     // Set flag register based on overflow
                     if (vx as u16) + (vy as u16) > 0xFF {
                         match self.register.set_v(0xF, 1) {
-                            Ok(()) => {},
+                            Ok(()) => {}
                             Err(err) => {
                                 return Err(sub_error(opcode, pc, err));
                             }
                         }
                     } else {
                         match self.register.set_v(0xF, 0) {
-                            Ok(()) => {},
+                            Ok(()) => {}
                             Err(err) => {
                                 return Err(sub_error(opcode, pc, err));
                             }
@@ -301,7 +300,7 @@ impl Chip8 {
                     match self.register.set_v(b as u8, vx.wrapping_add(vy)) {
                         Ok(()) => {
                             return Ok(());
-                        },
+                        }
                         Err(err) => {
                             return Err(sub_error(opcode, pc, err));
                         }
@@ -326,14 +325,14 @@ impl Chip8 {
                     // Set flag register based on first operand being larger than second
                     if vx > vy {
                         match self.register.set_v(0xF, 1) {
-                            Ok(()) => {},
+                            Ok(()) => {}
                             Err(err) => {
                                 return Err(sub_error(opcode, pc, err));
                             }
                         };
                     } else {
                         match self.register.set_v(0xF, 0) {
-                            Ok(()) => {},
+                            Ok(()) => {}
                             Err(err) => {
                                 return Err(sub_error(opcode, pc, err));
                             }
@@ -343,7 +342,7 @@ impl Chip8 {
                     match self.register.set_v(b as u8, vx - vy) {
                         Ok(()) => {
                             return Ok(());
-                        },
+                        }
                         Err(err) => {
                             return Err(sub_error(opcode, pc, err));
                         }
@@ -372,14 +371,14 @@ impl Chip8 {
                     // Set flag register based on first operand being larger than second
                     if vy > vx {
                         match self.register.set_v(0xF, 1) {
-                            Ok(()) => {},
+                            Ok(()) => {}
                             Err(err) => {
                                 return Err(sub_error(opcode, pc, err));
                             }
                         }
                     } else {
                         match self.register.set_v(0xF, 0) {
-                            Ok(()) => {},
+                            Ok(()) => {}
                             Err(err) => {
                                 return Err(sub_error(opcode, pc, err));
                             }
@@ -389,7 +388,7 @@ impl Chip8 {
                     match self.register.set_v(b as u8, vy - vx) {
                         Ok(()) => {
                             return Ok(());
-                        },
+                        }
                         Err(err) => {
                             return Err(sub_error(opcode, pc, err));
                         }
@@ -402,7 +401,7 @@ impl Chip8 {
                 _ => {
                     return Err(panic_on_opcode(opcode, pc));
                 }
-            }
+            },
             9 => {
                 if d == 0 {
                     let vx = match self.register.get_v(b as u8) {
@@ -461,7 +460,7 @@ impl Chip8 {
                 match self.register.set_v(b as u8, val) {
                     Ok(()) => {
                         return Ok(());
-                    },
+                    }
                     Err(err) => {
                         return Err(sub_error(opcode, pc, err));
                     }
@@ -480,7 +479,8 @@ impl Chip8 {
                     if d == 0xE {
                         // FX1E
                         // TODO: config for ambiguous overflow behavior here
-                        self.register.set_index_register(self.register.get_index() + b);
+                        self.register
+                            .set_index_register(self.register.get_index() + b);
                         return Ok(());
                     } else {
                         return Err(panic_on_opcode(opcode, pc));
@@ -508,12 +508,13 @@ impl Chip8 {
                         }
 
                         for j in 0..=b {
-                            self.memory[(self.register.get_index() + j) as usize] = match self.register.get_v(j as u8) {
-                                Ok(value) => value,
-                                Err(err) => {
-                                    return Err(sub_error(opcode, pc, err));
-                                }
-                            };
+                            self.memory[(self.register.get_index() + j) as usize] =
+                                match self.register.get_v(j as u8) {
+                                    Ok(value) => value,
+                                    Err(err) => {
+                                        return Err(sub_error(opcode, pc, err));
+                                    }
+                                };
                         }
                         return Ok(());
                     } else {
@@ -525,8 +526,11 @@ impl Chip8 {
                     if d == 5 {
                         // FX65
                         for j in 0..=b {
-                            match self.register.set_v(j as u8, self.memory[(self.register.get_index() + j) as usize]) {
-                                Ok(()) => {},
+                            match self.register.set_v(
+                                j as u8,
+                                self.memory[(self.register.get_index() + j) as usize],
+                            ) {
+                                Ok(()) => {}
                                 Err(err) => {
                                     return Err(sub_error(opcode, pc, err));
                                 }
@@ -541,7 +545,7 @@ impl Chip8 {
                 _ => {
                     return Err(panic_on_opcode(opcode, pc));
                 }
-            }
+            },
             _ => {
                 return Err(panic_on_opcode(opcode, pc));
             }

@@ -1,13 +1,13 @@
 pub struct Stack {
     sp: u8,
-    stack: [u16; 16]
+    stack: [u16; 16],
 }
 
 impl Stack {
     pub fn new() -> Self {
         Self {
             sp: 0,
-            stack: [0; 16]
+            stack: [0; 16],
         }
     }
 

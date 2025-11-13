@@ -5,10 +5,7 @@ pub struct Registers {
 
 impl Registers {
     pub fn new() -> Self {
-        Self {
-            v: [0; 16],
-            i: 0,
-        }
+        Self { v: [0; 16], i: 0 }
     }
 
     pub fn set_index_register(&mut self, i: u16) {
