@@ -544,9 +544,16 @@ impl Chip8 {
                 1 => {
                     if d == 0xE {
                         // FX1E
+                        // I += Vx
                         // TODO: config for ambiguous overflow behavior here
+                        let vx = match self.register.get_v(b as u8) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        };
                         self.register
-                            .set_index_register(self.register.get_index() + b);
+                            .set_index_register(self.register.get_index() + (vx as u16));
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
