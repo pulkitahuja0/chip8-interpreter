@@ -1,3 +1,5 @@
+use std::ops::Sub;
+
 use rand::Rng;
 use rand::rngs::ThreadRng;
 
@@ -415,7 +417,43 @@ impl Chip8 {
                     }
                 }
                 6 => {
-                    // TODO: Shift (need to add configuration)
+                    // 8XY6
+                    // Shift right
+                    if !self.cfg.shift_in_place_8xy {
+                        // Vx = Vy
+                        let vy = match self.register.get_v(c as u8) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err))
+                            }
+                        };
+                        match self.register.set_v(b as u8, vy) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err))
+                            }
+                        };
+                    }
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
+                    // Shift right
+                    match self.register.set_v(b as u8, vx >> 1) {
+                        Ok(()) => {},
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
+                    // VF = shifted out bit
+                    match self.register.set_v(0xF, vx & 1) {
+                        Ok(()) => {},
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
                     return Ok(());
                 }
                 7 => {
@@ -461,7 +499,43 @@ impl Chip8 {
                     }
                 }
                 0xE => {
-                    // TODO: Shift (need to add configuration)
+                    // 8XYE
+                    // Shift left
+                    if !self.cfg.shift_in_place_8xy {
+                        // Vx = Vy
+                        let vy = match self.register.get_v(c as u8) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err))
+                            }
+                        };
+                        match self.register.set_v(b as u8, vy) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err))
+                            }
+                        };
+                    }
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
+                    // Shift left
+                    match self.register.set_v(b as u8, vx << 1) {
+                        Ok(()) => {},
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
+                    // VF = shifted out bit
+                    match self.register.set_v(0xF, (vx >> (7)) & 1) {
+                        Ok(()) => {},
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
                     return Ok(());
                 }
                 _ => {
