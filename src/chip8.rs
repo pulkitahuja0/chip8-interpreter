@@ -35,7 +35,7 @@ impl Chip8 {
     pub fn new(rom: &[u8]) -> Self {
         let mut memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 
-        // TODO: load fontset here
+        // Load fontset here
         const FONTSET: [u8; 80] = [
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -540,7 +540,15 @@ impl Chip8 {
                 2 => {
                     if d == 9 {
                         // FX29
-                        // TODO: Fonts
+                        // I = memory of character in Vx
+                        match self.register.get_v(b as u8) {
+                            Ok(vx) => {
+                                self.register.set_index_register((vx as u16) * 5);
+                            },
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        }
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
