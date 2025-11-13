@@ -205,9 +205,14 @@ impl Chip8 {
             7 => {
                 // 7XNN
                 // Vx = Vx + NN
-                // TODO: Implement properly
                 let nn = create_nn(c, d);
-                match self.register.set_v(b as u8, nn as u8) {
+                let vx = match self.register.get_v(b as u8) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        return Err(sub_error(opcode, pc, err))
+                    }
+                };
+                match self.register.set_v(b as u8, vx + (nn as u8)) {
                     Ok(()) => {
                         return Ok(());
                     }
