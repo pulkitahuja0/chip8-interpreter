@@ -101,7 +101,11 @@ impl Chip8 {
                         self.pc = match self.stack.return_subroutine() {
                             Ok(value) => value,
                             Err(err) => {
-                                // TODO: Config to ignore if stack underflow
+                                // Skip instruction on stack underflow if allowed
+                                if self.cfg.skip_stack_underflow {
+                                    return Ok(());
+                                }
+
                                 return Err(sub_error(opcode, pc, err));
                             }
                         };
