@@ -1,9 +1,9 @@
 use rand::Rng;
 use rand::rngs::ThreadRng;
 
+use crate::config::Config;
 use crate::registers::Registers;
 use crate::stack::Stack;
-use crate::config::Config;
 
 const MEMORY_SIZE: usize = 4096;
 
@@ -13,7 +13,7 @@ pub struct Chip8 {
     stack: Stack,
     pc: u16,
     rng: ThreadRng,
-    cfg: Config
+    cfg: Config,
 }
 
 fn opcode_error(opcode: u16, pc: u16) -> String {
@@ -72,7 +72,7 @@ impl Chip8 {
             stack: Stack::new(),
             pc: 0x200,
             rng: rand::rng(),
-            cfg
+            cfg,
         }
     }
 
@@ -510,9 +510,7 @@ impl Chip8 {
                     // PC = XNN + Vx
                     let vx = match self.register.get_v(b as u8) {
                         Ok(value) => value,
-                        Err(err) => {
-                            return Err(sub_error(opcode, pc, err))
-                        }
+                        Err(err) => return Err(sub_error(opcode, pc, err)),
                     };
 
                     self.pc = nnn + (vx as u16);
@@ -574,9 +572,10 @@ impl Chip8 {
                         };
 
                         // VF = 1 if I + Vx > 0xFFF and config allows it
-                        if self.register.get_index() + (vx as u16) > 0xFFF && self.cfg.fx1e_overflow {
+                        if self.register.get_index() + (vx as u16) > 0xFFF && self.cfg.fx1e_overflow
+                        {
                             match self.register.set_v(0xF, 1) {
-                                Ok(()) => {},
+                                Ok(()) => {}
                                 Err(err) => {
                                     return Err(sub_error(opcode, pc, err));
                                 }
@@ -632,7 +631,8 @@ impl Chip8 {
 
                         // If Config allows increment I with loop to replicate behavior
                         if self.cfg.increment_i_on_mem {
-                            self.register.set_index_register(self.register.get_index() + b + 1);
+                            self.register
+                                .set_index_register(self.register.get_index() + b + 1);
                         }
 
                         return Ok(());
@@ -658,7 +658,8 @@ impl Chip8 {
 
                         // If Config allows increment I with loop to replicate behavior
                         if self.cfg.increment_i_on_mem {
-                            self.register.set_index_register(self.register.get_index() + b + 1);
+                            self.register
+                                .set_index_register(self.register.get_index() + b + 1);
                         }
 
                         return Ok(());
