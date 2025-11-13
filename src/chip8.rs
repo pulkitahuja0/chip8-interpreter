@@ -629,6 +629,12 @@ impl Chip8 {
                                     }
                                 };
                         }
+
+                        // If Config allows increment I with loop to replicate behavior
+                        if self.cfg.increment_i_on_mem {
+                            self.register.set_index_register(self.register.get_index() + b + 1);
+                        }
+
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
@@ -648,6 +654,11 @@ impl Chip8 {
                                     return Err(sub_error(opcode, pc, err));
                                 }
                             }
+                        }
+
+                        // If Config allows increment I with loop to replicate behavior
+                        if self.cfg.increment_i_on_mem {
+                            self.register.set_index_register(self.register.get_index() + b + 1);
                         }
 
                         return Ok(());
