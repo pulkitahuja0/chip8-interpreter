@@ -31,7 +31,6 @@ fn create_nn(c: u16, d: u16) -> u16 {
     (c << 4) | d
 }
 
-// TODO: Error handling .set for bad registers
 impl Chip8 {
     pub fn new(rom: &[u8]) -> Self {
         let mut memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
@@ -153,7 +152,19 @@ impl Chip8 {
                 // Skip if Vx == Vy
                 // TODO: Error handling here
                 if d == 0 {
-                    if self.register.get_v(b as u8) == self.register.get_v(c as u8) {
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    let vy = match self.register.get_v(c as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
+                    if vx == vy {
                         self.pc += 2;
                     }
                     return Ok(());
