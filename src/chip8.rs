@@ -1,6 +1,9 @@
+use std::ops::Sub;
+
 use rand::Rng;
 use rand::rngs::ThreadRng;
 
+use crate::config::Config;
 use crate::registers::Registers;
 use crate::stack::Stack;
 
@@ -12,6 +15,7 @@ pub struct Chip8 {
     stack: Stack,
     pc: u16,
     rng: ThreadRng,
+    cfg: Config,
 }
 
 fn opcode_error(opcode: u16, pc: u16) -> String {
@@ -32,7 +36,7 @@ fn create_nn(c: u16, d: u16) -> u16 {
 }
 
 impl Chip8 {
-    pub fn new(rom: &[u8]) -> Self {
+    pub fn new(rom: &[u8], cfg: Config) -> Self {
         let mut memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 
         // Load fontset here
@@ -57,7 +61,7 @@ impl Chip8 {
 
         memory[..FONTSET.len()].copy_from_slice(&FONTSET);
 
-        // TODO: Handle bad ROM
+        // TODO: Handle uneven ROM (rom.len() % 2 != 0)
         if 0x200 + rom.len() > MEMORY_SIZE {
             panic!("Bad ROM detected");
         }
@@ -70,11 +74,11 @@ impl Chip8 {
             stack: Stack::new(),
             pc: 0x200,
             rng: rand::rng(),
+            cfg,
         }
     }
 
     pub fn step(&mut self) -> Result<(), String> {
-        // TODO: Config to skip bad opcodes instead of error
         let opcode = ((self.memory[self.pc as usize] as u16) << 8)
             | (self.memory[(self.pc + 1) as usize] as u16);
         let pc = self.pc; // Address of current instruction
@@ -99,7 +103,11 @@ impl Chip8 {
                         self.pc = match self.stack.return_subroutine() {
                             Ok(value) => value,
                             Err(err) => {
-                                // TODO: Config to ignore if stack underflow
+                                // Skip instruction on stack underflow if allowed
+                                if self.cfg.skip_stack_underflow {
+                                    return Ok(());
+                                }
+
                                 return Err(sub_error(opcode, pc, err));
                             }
                         };
@@ -409,7 +417,43 @@ impl Chip8 {
                     }
                 }
                 6 => {
-                    // TODO: Shift (need to add configuration)
+                    // 8XY6
+                    // Shift right
+                    if !self.cfg.shift_in_place_8xy {
+                        // Vx = Vy
+                        let vy = match self.register.get_v(c as u8) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err))
+                            }
+                        };
+                        match self.register.set_v(b as u8, vy) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err))
+                            }
+                        };
+                    }
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
+                    // Shift right
+                    match self.register.set_v(b as u8, vx >> 1) {
+                        Ok(()) => {},
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
+                    // VF = shifted out bit
+                    match self.register.set_v(0xF, vx & 1) {
+                        Ok(()) => {},
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
                     return Ok(());
                 }
                 7 => {
@@ -455,7 +499,43 @@ impl Chip8 {
                     }
                 }
                 0xE => {
-                    // TODO: Shift (need to add configuration)
+                    // 8XYE
+                    // Shift left
+                    if !self.cfg.shift_in_place_8xy {
+                        // Vx = Vy
+                        let vy = match self.register.get_v(c as u8) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err))
+                            }
+                        };
+                        match self.register.set_v(b as u8, vy) {
+                            Ok(()) => {},
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err))
+                            }
+                        };
+                    }
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
+                    // Shift left
+                    match self.register.set_v(b as u8, vx << 1) {
+                        Ok(()) => {},
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
+                    // VF = shifted out bit
+                    match self.register.set_v(0xF, (vx >> (7)) & 1) {
+                        Ok(()) => {},
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    };
                     return Ok(());
                 }
                 _ => {
@@ -496,24 +576,37 @@ impl Chip8 {
                 return Ok(());
             }
             0xB => {
-                // BNNN
-                // PC = NNN + V0
+                // Behavior based on cfg.bxnn
                 let nnn = create_nnn(b, c, d);
-                let v0 = match self.register.get_v(0) {
-                    Ok(value) => value,
-                    Err(err) => {
-                        return Err(sub_error(opcode, pc, err));
-                    }
-                };
 
-                if (((nnn as u8) + v0) as usize) < MEMORY_SIZE {
-                    self.pc = nnn + (v0 as u16);
+                if self.cfg.bxnn {
+                    // BXNN
+                    // PC = XNN + Vx
+                    let vx = match self.register.get_v(b as u8) {
+                        Ok(value) => value,
+                        Err(err) => return Err(sub_error(opcode, pc, err)),
+                    };
+
+                    self.pc = nnn + (vx as u16);
+
                     return Ok(());
                 } else {
-                    return Err(opcode_error(opcode, pc));
-                }
+                    // BNNN
+                    // PC = NNN + V0
+                    let v0 = match self.register.get_v(0) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err));
+                        }
+                    };
 
-                // TODO: Add BXNN based off of config
+                    if (((nnn as u8) + v0) as usize) < MEMORY_SIZE {
+                        self.pc = nnn + (v0 as u16);
+                        return Ok(());
+                    } else {
+                        return Err(opcode_error(opcode, pc));
+                    }
+                }
             }
             0xC => {
                 // CXNN
@@ -541,12 +634,54 @@ impl Chip8 {
                 return Ok(());
             }
             0xF => match c {
+                0 => {
+                    if d == 7 {
+                        // FX07
+                        // TODO: Timers
+                        return Ok(());
+                    } else if d == 0xA {
+                        // FX0A
+                        // TODO: Input
+                        return Ok(());
+                    } else {
+                        return Err(opcode_error(opcode, pc));
+                    }
+                }
                 1 => {
                     if d == 0xE {
                         // FX1E
-                        // TODO: config for ambiguous overflow behavior here
+                        // I += Vx
+                        let vx = match self.register.get_v(b as u8) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                return Err(sub_error(opcode, pc, err));
+                            }
+                        };
+
+                        // VF = 1 if I + Vx > 0xFFF and config allows it
+                        if self.register.get_index() + (vx as u16) > 0xFFF && self.cfg.fx1e_overflow
+                        {
+                            match self.register.set_v(0xF, 1) {
+                                Ok(()) => {}
+                                Err(err) => {
+                                    return Err(sub_error(opcode, pc, err));
+                                }
+                            }
+                        }
                         self.register
-                            .set_index_register(self.register.get_index() + b);
+                            .set_index_register(self.register.get_index() + (vx as u16));
+                        return Ok(());
+                    } else if d == 5 {
+                        if c == 1 {
+                            // FX15
+                            // TODO: timer
+                        }
+                        return Ok(());
+                    } else if d == 8 {
+                        if c == 1 {
+                            // FX18
+                            // TODO: timer
+                        }
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
@@ -592,6 +727,13 @@ impl Chip8 {
                                     }
                                 };
                         }
+
+                        // If Config allows increment I with loop to replicate behavior
+                        if self.cfg.increment_i_on_mem {
+                            self.register
+                                .set_index_register(self.register.get_index() + b + 1);
+                        }
+
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
@@ -611,6 +753,12 @@ impl Chip8 {
                                     return Err(sub_error(opcode, pc, err));
                                 }
                             }
+                        }
+
+                        // If Config allows increment I with loop to replicate behavior
+                        if self.cfg.increment_i_on_mem {
+                            self.register
+                                .set_index_register(self.register.get_index() + b + 1);
                         }
 
                         return Ok(());
