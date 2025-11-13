@@ -16,7 +16,7 @@ impl Stack {
         self.sp += 1;
 
         if self.sp > 15 {
-            return Err("Stack overflow")
+            return Err("Stack overflow");
         }
 
         Ok(())
@@ -24,7 +24,7 @@ impl Stack {
 
     pub fn return_subroutine(&mut self) -> Result<u16, &'static str> {
         if self.sp == 0 {
-            return Err("Stack underflow")
+            return Err("Stack underflow");
         }
 
         self.sp -= 1;
