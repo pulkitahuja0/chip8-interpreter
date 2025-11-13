@@ -3,7 +3,6 @@ pub struct Registers {
     i: u16,
 }
 
-// TODO: Remove Result<> from set_v and get_v (no possibility of out of bounds register)
 impl Registers {
     pub fn new() -> Self {
         Self { v: [0; 16], i: 0 }
