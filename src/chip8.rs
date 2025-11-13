@@ -572,11 +572,9 @@ impl Chip8 {
                                 return Err(sub_error(opcode, pc, err));
                             }
                         };
-                        self.register
-                            .set_index_register(self.register.get_index() + (vx as u16));
 
                         // VF = 1 if I + Vx > 0xFFF and config allows it
-                        if self.register.get_index() > 0xFFF && self.cfg.fx1e_overflow {
+                        if self.register.get_index() + (vx as u16) > 0xFFF && self.cfg.fx1e_overflow {
                             match self.register.set_v(0xF, 1) {
                                 Ok(()) => {},
                                 Err(err) => {
@@ -584,6 +582,8 @@ impl Chip8 {
                                 }
                             }
                         }
+                        self.register
+                            .set_index_register(self.register.get_index() + (vx as u16));
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
