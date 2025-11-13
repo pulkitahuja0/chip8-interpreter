@@ -131,8 +131,7 @@ impl Chip8 {
                 // Skip if Vx != NN
                 let nn = create_nn(c, d);
                 {
-                    let v = self.register.get_v(b as u8);
-                    match v {
+                    match self.register.get_v(b as u8) {
                         Ok(value) => {
                             if value != nn as u8 {
                                 self.pc += 2;
