@@ -560,6 +560,19 @@ impl Chip8 {
                 return Ok(());
             }
             0xF => match c {
+                0 => {
+                    if d == 7 {
+                        // FX07
+                        // TODO: Timers
+                        return Ok(());
+                    } else if d == 0xA {
+                        // FX0A
+                        // TODO: Input
+                        return Ok(());
+                    } else {
+                        return Err(opcode_error(opcode, pc));
+                    }
+                }
                 1 => {
                     if d == 0xE {
                         // FX1E
@@ -584,7 +597,20 @@ impl Chip8 {
                         self.register
                             .set_index_register(self.register.get_index() + (vx as u16));
                         return Ok(());
-                    } else {
+                    } else if d == 5 {
+                        if c == 1 {
+                            // FX15
+                            // TODO: timer
+                        }
+                        return Ok(());
+                    } else if d == 8 {
+                        if c == 1 {
+                            // FX18
+                            // TODO: timer
+                        }
+                        return Ok(());
+                    }
+                    else {
                         return Err(opcode_error(opcode, pc));
                     }
                 }
