@@ -344,19 +344,20 @@ impl Chip8 {
             }
             0xB => {
                 // Behavior based on cfg.bxnn
-                let nnn = create_nnn(b, c, d);
 
                 if self.cfg.bxnn {
                     // BXNN
                     // PC = XNN + Vx
+                    let nn = create_nn(c, d);
                     let vx = self.register.get_v(b as u8);
 
-                    self.pc = nnn + (vx as u16);
+                    self.pc = nn + (vx as u16);
 
                     return Ok(());
                 } else {
                     // BNNN
                     // PC = NNN + V0
+                    let nnn = create_nnn(b, c, d);
                     let v0 = self.register.get_v(0);
 
                     if (((nnn as u8) + v0) as usize) < MEMORY_SIZE {
