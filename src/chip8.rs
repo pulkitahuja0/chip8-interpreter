@@ -502,6 +502,7 @@ impl Chip8 {
                 return Ok(());
             }
             0xB => {
+                // Behavior based on cfg.bxnn
                 let nnn = create_nnn(b, c, d);
 
                 if self.cfg.bxnn {
@@ -534,8 +535,6 @@ impl Chip8 {
                         return Err(opcode_error(opcode, pc));
                     }
                 }
-
-                // TODO: Add BXNN based off of config
             }
             0xC => {
                 // CXNN
