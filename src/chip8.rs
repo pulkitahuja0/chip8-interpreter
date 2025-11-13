@@ -3,6 +3,7 @@ use rand::rngs::ThreadRng;
 
 use crate::registers::Registers;
 use crate::stack::Stack;
+use crate::config::Config;
 
 const MEMORY_SIZE: usize = 4096;
 
@@ -12,6 +13,7 @@ pub struct Chip8 {
     stack: Stack,
     pc: u16,
     rng: ThreadRng,
+    cfg: Config
 }
 
 fn opcode_error(opcode: u16, pc: u16) -> String {
@@ -32,7 +34,7 @@ fn create_nn(c: u16, d: u16) -> u16 {
 }
 
 impl Chip8 {
-    pub fn new(rom: &[u8]) -> Self {
+    pub fn new(rom: &[u8], cfg: Config) -> Self {
         let mut memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 
         // Load fontset here
@@ -70,11 +72,11 @@ impl Chip8 {
             stack: Stack::new(),
             pc: 0x200,
             rng: rand::rng(),
+            cfg
         }
     }
 
     pub fn step(&mut self) -> Result<(), String> {
-        // TODO: Config to skip bad opcodes instead of error
         let opcode = ((self.memory[self.pc as usize] as u16) << 8)
             | (self.memory[(self.pc + 1) as usize] as u16);
         let pc = self.pc; // Address of current instruction
