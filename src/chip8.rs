@@ -74,6 +74,7 @@ impl Chip8 {
     }
 
     pub fn step(&mut self) -> Result<(), String> {
+        // TODO: Config to skip bad opcodes instead of error
         let opcode = ((self.memory[self.pc as usize] as u16) << 8)
             | (self.memory[(self.pc + 1) as usize] as u16);
         let pc = self.pc; // Address of current instruction
