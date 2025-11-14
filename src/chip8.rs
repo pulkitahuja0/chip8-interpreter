@@ -1,9 +1,8 @@
-use std::ops::Sub;
-
 use rand::Rng;
 use rand::rngs::ThreadRng;
 
 use crate::config::Config;
+use crate::hardware::Hardware;
 use crate::registers::Registers;
 use crate::stack::Stack;
 
@@ -16,6 +15,7 @@ pub struct Chip8 {
     pc: u16,
     rng: ThreadRng,
     cfg: Config,
+    hardware: Hardware
 }
 
 fn opcode_error(opcode: u16, pc: u16) -> String {
@@ -75,6 +75,7 @@ impl Chip8 {
             pc: 0x200,
             rng: rand::rng(),
             cfg,
+            hardware: Hardware::new()
         }
     }
 
