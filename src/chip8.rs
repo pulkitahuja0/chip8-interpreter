@@ -1,3 +1,5 @@
+use std::ops::Sub;
+
 use rand::Rng;
 use rand::rngs::ThreadRng;
 
@@ -96,8 +98,11 @@ impl Chip8 {
                 if b == 0 && c == 0xE {
                     if d == 0 {
                         // 00E0
-                        // TODO: Clear screen
-                        return Ok(());
+                        // Clear screen
+                        match self.hardware.clear() {
+                            Ok(()) => return Ok(()),
+                            Err(err) => return Err(sub_error(opcode, pc, err))
+                        }
                     } else if d == 0xE {
                         // 00EE
                         // Return subroutine
