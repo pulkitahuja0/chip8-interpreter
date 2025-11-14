@@ -436,7 +436,12 @@ impl Chip8 {
                         return Ok(());
                     } else if d == 0xA {
                         // FX0A
-                        // TODO: Input
+                        // Wait until key
+                        let key = match Hardware::get_key() {
+                            Ok(v) => v,
+                            Err(err) => return Err(sub_error(opcode, pc, err))
+                        };
+                        self.register.set_v(b as u8, key);
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));
