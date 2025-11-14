@@ -390,8 +390,43 @@ impl Chip8 {
                 return Ok(());
             }
             0xE => {
-                // TODO: Input
-                return Ok(());
+                if c == 9 && d == 0xE {
+                    // EX9E
+                    // Skip if pressed
+                    let vx = self.register.get_v(b as u8);
+                    // TODO: Should this be a member method?
+                    match Hardware::check_key(vx) {
+                        Ok(is_pressed) => {
+                            if is_pressed {
+                                self.pc += 2;
+                            }
+
+                            return Ok(());
+                        },
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    }
+                } else if c == 0xA && d == 1 {
+                    // EXA1
+                    // Skipped if not pressed
+                    let vx = self.register.get_v(b as u8);
+                    // TODO: Should this be a member method?
+                    match Hardware::check_key(vx) {
+                        Ok(is_pressed) => {
+                            if !is_pressed {
+                                self.pc += 2;
+                            }
+
+                            return Ok(());
+                        },
+                        Err(err) => {
+                            return Err(sub_error(opcode, pc, err))
+                        }
+                    }
+                }
+
+                return Err(opcode_error(opcode, pc))
             }
             0xF => match c {
                 0 => {
