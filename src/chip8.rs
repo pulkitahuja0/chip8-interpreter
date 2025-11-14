@@ -17,7 +17,7 @@ pub struct Chip8 {
     pc: u16,
     rng: ThreadRng,
     cfg: Config,
-    hardware: Hardware
+    hardware: Hardware,
 }
 
 fn opcode_error(opcode: u16, pc: u16) -> String {
@@ -77,7 +77,7 @@ impl Chip8 {
             pc: 0x200,
             rng: rand::rng(),
             cfg,
-            hardware: Hardware::new()
+            hardware: Hardware::new(),
         }
     }
 
@@ -101,7 +101,7 @@ impl Chip8 {
                         // Clear screen
                         match self.hardware.clear() {
                             Ok(()) => return Ok(()),
-                            Err(err) => return Err(sub_error(opcode, pc, err))
+                            Err(err) => return Err(sub_error(opcode, pc, err)),
                         }
                     } else if d == 0xE {
                         // 00EE
@@ -402,10 +402,8 @@ impl Chip8 {
                             }
 
                             return Ok(());
-                        },
-                        Err(err) => {
-                            return Err(sub_error(opcode, pc, err))
                         }
+                        Err(err) => return Err(sub_error(opcode, pc, err)),
                     }
                 } else if c == 0xA && d == 1 {
                     // EXA1
@@ -419,14 +417,12 @@ impl Chip8 {
                             }
 
                             return Ok(());
-                        },
-                        Err(err) => {
-                            return Err(sub_error(opcode, pc, err))
                         }
+                        Err(err) => return Err(sub_error(opcode, pc, err)),
                     }
                 }
 
-                return Err(opcode_error(opcode, pc))
+                return Err(opcode_error(opcode, pc));
             }
             0xF => match c {
                 0 => {
@@ -439,7 +435,7 @@ impl Chip8 {
                         // Wait until key
                         let key = match Hardware::get_key() {
                             Ok(v) => v,
-                            Err(err) => return Err(sub_error(opcode, pc, err))
+                            Err(err) => return Err(sub_error(opcode, pc, err)),
                         };
                         self.register.set_v(b as u8, key);
                         return Ok(());

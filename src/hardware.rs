@@ -1,9 +1,16 @@
-use std::{io::{self, Stdout}, time::Duration};
+use std::{
+    io::{self, Stdout},
+    time::Duration,
+};
 
-use crossterm::{ExecutableCommand, event::{Event, KeyCode, KeyEvent, KeyEventKind, poll, read}, terminal};
+use crossterm::{
+    ExecutableCommand,
+    event::{Event, KeyCode, KeyEvent, KeyEventKind, poll, read},
+    terminal,
+};
 
 pub struct Hardware {
-    stdout: Stdout
+    stdout: Stdout,
 }
 
 fn value_to_char(value: u8) -> Result<char, &'static str> {
@@ -24,7 +31,7 @@ fn value_to_char(value: u8) -> Result<char, &'static str> {
         0xD => Ok('d'),
         0xE => Ok('e'),
         0xF => Ok('f'),
-        _ => Err("Invalid value used for character")
+        _ => Err("Invalid value used for character"),
     }
 }
 
@@ -50,20 +57,20 @@ fn char_to_value(c: char) -> Result<u8, &'static str> {
     }
 }
 
-
 impl Hardware {
     pub fn new() -> Self {
         let stdout = io::stdout();
-        Self {
-            stdout
-        }
+        Self { stdout }
     }
 
     pub fn clear(&mut self) -> Result<(), &'static str> {
-        match self.stdout.execute(terminal::Clear(terminal::ClearType::All)) {
+        match self
+            .stdout
+            .execute(terminal::Clear(terminal::ClearType::All))
+        {
             Ok(_) => {
                 return Ok(());
-            },
+            }
             Err(_) => {
                 return Err("Clear display error");
             }
@@ -73,7 +80,7 @@ impl Hardware {
     pub fn check_key(key: u8) -> Result<bool, &'static str> {
         let key = match value_to_char(key) {
             Ok(v) => v,
-            Err(err) => return Err(err)
+            Err(err) => return Err(err),
         };
 
         match poll(Duration::from_secs(0)) {
@@ -84,21 +91,17 @@ impl Hardware {
 
                 let event = match read() {
                     Ok(e) => e,
-                    Err(_) => return Err("Event reading error")
+                    Err(_) => return Err("Event reading error"),
                 };
 
-                    match event.as_key_press_event() {
-                        None => {
-                            return Ok(false)
-                        },
-                        Some(event) => {
-                            return Ok(event.code.is_char(key));
-                        }
+                match event.as_key_press_event() {
+                    None => return Ok(false),
+                    Some(event) => {
+                        return Ok(event.code.is_char(key));
                     }
-            },
-            Err(_) => {
-                return Err("Polling error")
+                }
             }
+            Err(_) => return Err("Polling error"),
         }
     }
 
@@ -106,9 +109,9 @@ impl Hardware {
         match Self::read_until() {
             Ok(c) => match char_to_value(c) {
                 Ok(v) => return Ok(v),
-                Err(err) => return Err(err)
+                Err(err) => return Err(err),
             },
-            Err(err) => return Err(err)
+            Err(err) => return Err(err),
         }
     }
 
@@ -116,19 +119,35 @@ impl Hardware {
         loop {
             let event = match read() {
                 Ok(e) => e,
-                Err(_) => return Err("Event reading error")
+                Err(_) => return Err("Event reading error"),
             };
 
             if let Event::Key(key_event) = event {
                 if key_event.kind == KeyEventKind::Press {
-                    if key_event.code == KeyCode::Char('0') || key_event.code == KeyCode::Char('1') || key_event.code == KeyCode::Char('2') || key_event.code == KeyCode::Char('3') || key_event.code == KeyCode::Char('4') || key_event.code == KeyCode::Char('5') || key_event.code == KeyCode::Char('6') || key_event.code == KeyCode::Char('7') || key_event.code == KeyCode::Char('8') || key_event.code == KeyCode::Char('9') || key_event.code == KeyCode::Char('a') || key_event.code == KeyCode::Char('b') || key_event.code == KeyCode::Char('c') || key_event.code == KeyCode::Char('d') || key_event.code == KeyCode::Char('e') || key_event.code == KeyCode::Char('f') {
+                    if key_event.code == KeyCode::Char('0')
+                        || key_event.code == KeyCode::Char('1')
+                        || key_event.code == KeyCode::Char('2')
+                        || key_event.code == KeyCode::Char('3')
+                        || key_event.code == KeyCode::Char('4')
+                        || key_event.code == KeyCode::Char('5')
+                        || key_event.code == KeyCode::Char('6')
+                        || key_event.code == KeyCode::Char('7')
+                        || key_event.code == KeyCode::Char('8')
+                        || key_event.code == KeyCode::Char('9')
+                        || key_event.code == KeyCode::Char('a')
+                        || key_event.code == KeyCode::Char('b')
+                        || key_event.code == KeyCode::Char('c')
+                        || key_event.code == KeyCode::Char('d')
+                        || key_event.code == KeyCode::Char('e')
+                        || key_event.code == KeyCode::Char('f')
+                    {
                         match key_event.code.as_char() {
                             None => return Err("Event reading error"),
-                            Some(ch) => return Ok(ch)
+                            Some(ch) => return Ok(ch),
                         }
                     }
                 } else {
-                    continue
+                    continue;
                 }
             }
         }
