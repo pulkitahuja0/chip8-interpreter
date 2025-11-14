@@ -23,12 +23,11 @@ struct Args {
     #[arg(long, default_value_t=false)]
     shift_in_place_8xy: bool,
     #[arg(long, default_value_t=false)]
-    increment_i_on_mem: bool
+    increment_i_on_mem: bool,
 }
 
 // TODO: Config to skip bad opcodes instead of error (don't store in Config struct)
 fn main() {
-    println!("Hello, world!");
     let args = Args::parse();
     let mut buffer = [0u8; 3584];
     let mut file = File::open(&args.file)
