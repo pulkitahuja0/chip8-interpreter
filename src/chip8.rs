@@ -1,9 +1,8 @@
-use std::ops::Sub;
-
 use rand::Rng;
 use rand::rngs::ThreadRng;
 
 use crate::config::Config;
+use crate::hardware::Hardware;
 use crate::registers::Registers;
 use crate::stack::Stack;
 
@@ -16,6 +15,7 @@ pub struct Chip8 {
     pc: u16,
     rng: ThreadRng,
     cfg: Config,
+    hardware: Hardware,
 }
 
 fn opcode_error(opcode: u16, pc: u16) -> String {
@@ -75,6 +75,7 @@ impl Chip8 {
             pc: 0x200,
             rng: rand::rng(),
             cfg,
+            hardware: Hardware::new(),
         }
     }
 
@@ -95,8 +96,11 @@ impl Chip8 {
                 if b == 0 && c == 0xE {
                     if d == 0 {
                         // 00E0
-                        // TODO: Clear screen
-                        return Ok(());
+                        // Clear screen
+                        match self.hardware.clear() {
+                            Ok(()) => return Ok(()),
+                            Err(err) => return Err(sub_error(opcode, pc, err)),
+                        }
                     } else if d == 0xE {
                         // 00EE
                         // Return subroutine
@@ -380,12 +384,55 @@ impl Chip8 {
                 return Ok(());
             }
             0xD => {
-                // TODO: Display
-                return Ok(());
+                let vx = self.register.get_v(b as u8) & 63;
+                let vy = self.register.get_v(c as u8) & 31;
+                self.register.set_v(0xF, 0);
+                for i in 0..d {
+                    let byte = self.memory[(self.register.get_index() + i) as usize];
+                    match self.hardware.display_row(byte, vx, vy + i as u8) {
+                        Ok(()) => {}
+                        Err(err) => return Err(sub_error(opcode, pc, err)),
+                    }
+                }
+                match self.hardware.draw() {
+                    Ok(()) => Ok(()),
+                    Err(err) => Err(sub_error(opcode, pc, err)),
+                }
             }
             0xE => {
-                // TODO: Input
-                return Ok(());
+                if c == 9 && d == 0xE {
+                    // EX9E
+                    // Skip if pressed
+                    let vx = self.register.get_v(b as u8);
+                    // TODO: Should this be a member method?
+                    match Hardware::check_key(vx) {
+                        Ok(is_pressed) => {
+                            if is_pressed {
+                                self.pc += 2;
+                            }
+
+                            return Ok(());
+                        }
+                        Err(err) => return Err(sub_error(opcode, pc, err)),
+                    }
+                } else if c == 0xA && d == 1 {
+                    // EXA1
+                    // Skipped if not pressed
+                    let vx = self.register.get_v(b as u8);
+                    // TODO: Should this be a member method?
+                    match Hardware::check_key(vx) {
+                        Ok(is_pressed) => {
+                            if !is_pressed {
+                                self.pc += 2;
+                            }
+
+                            return Ok(());
+                        }
+                        Err(err) => return Err(sub_error(opcode, pc, err)),
+                    }
+                }
+
+                return Err(opcode_error(opcode, pc));
             }
             0xF => match c {
                 0 => {
@@ -395,7 +442,12 @@ impl Chip8 {
                         return Ok(());
                     } else if d == 0xA {
                         // FX0A
-                        // TODO: Input
+                        // Wait until key
+                        let key = match Hardware::get_key() {
+                            Ok(v) => v,
+                            Err(err) => return Err(sub_error(opcode, pc, err)),
+                        };
+                        self.register.set_v(b as u8, key);
                         return Ok(());
                     } else {
                         return Err(opcode_error(opcode, pc));

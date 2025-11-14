@@ -1,3 +1,4 @@
+// TODO: Configurable colors
 pub struct Config {
     pub skip_stack_underflow: bool,
     pub bxnn: bool,
