@@ -203,9 +203,9 @@ impl Hardware {
             for x in 0..64 {
                 if self.display.get(x, y) {
                     let _ = self.stdout.queue(cursor::MoveTo(x as u16, y as u16)).unwrap()
-                    .queue(style::PrintStyledContent("█".white()));
+                    .queue(style::PrintStyledContent("█".with(style::Color::Yellow)));
                 } else {
-                    let _ = self.stdout.queue(cursor::MoveTo(x as u16, y as u16)).unwrap().queue(style::PrintStyledContent(" ".white()));
+                    let _ = self.stdout.queue(cursor::MoveTo(x as u16, y as u16)).unwrap().queue(style::PrintStyledContent("█".with(style::Color::DarkYellow)));
                 }
             }
         }
