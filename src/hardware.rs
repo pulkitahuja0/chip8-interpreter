@@ -135,7 +135,9 @@ impl Hardware {
     pub fn get_key() -> Result<u8, &'static str> {
         match Self::read_until() {
             Ok(c) => match char_to_value(c) {
-                Ok(v) => return Ok(v),
+                Ok(v) => {
+                    return Ok(v)
+                },
                 Err(err) => return Err(err),
             },
             Err(err) => return Err(err),
@@ -144,12 +146,8 @@ impl Hardware {
 
     fn read_until() -> Result<char, &'static str> {
         loop {
-            let event = match read() {
-                Ok(e) => e,
-                Err(_) => return Err("Event reading error"),
-            };
-
-            if let Event::Key(key_event) = event {
+            match read() {
+                Ok(e) => if let Event::Key(key_event) = e {
                 if key_event.kind == KeyEventKind::Press {
                     if key_event.code == KeyCode::Char('0')
                         || key_event.code == KeyCode::Char('1')
@@ -176,7 +174,9 @@ impl Hardware {
                 } else {
                     continue;
                 }
-            }
+            },
+                Err(_) => return Err("Event reading error"),
+            };
         }
     }
 
