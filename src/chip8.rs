@@ -172,7 +172,7 @@ impl Chip8 {
                 let nn = create_nn(c, d);
                 {
                     let vx = self.register.get_v(b as u8);
-                    if vx == nn as u8 {
+                    if vx != nn as u8 {
                         self.pc += 2;
                     }
 
