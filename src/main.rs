@@ -42,7 +42,7 @@ fn main() {
         bxnn: args.bxnn,
         fx1e_overflow: args.flag_fx1e_overflow,
         shift_in_place_8xy: args.shift_in_place_8xy,
-        increment_i_on_mem: false,
+        increment_i_on_mem: args.increment_i_on_mem,
     };
 
     let mut cpu = Chip8::new(&buffer, config);
