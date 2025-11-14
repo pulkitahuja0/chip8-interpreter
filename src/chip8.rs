@@ -206,7 +206,7 @@ impl Chip8 {
                 // Vx = Vx + NN
                 let nn = create_nn(c, d);
                 let vx = self.register.get_v(b as u8);
-                self.register.set_v(b as u8, vx + (nn as u8));
+                self.register.set_v(b as u8, vx.overflowing_add(nn as u8).0);
                 return Ok(());
             }
             8 => match d {
@@ -270,7 +270,7 @@ impl Chip8 {
                         self.register.set_v(0xF, 0);
                     }
 
-                    self.register.set_v(b as u8, vx - vy);
+                    self.register.set_v(b as u8, vx.overflowing_sub(vy).0);
                     return Ok(());
                 }
                 6 => {
@@ -301,7 +301,7 @@ impl Chip8 {
                         self.register.set_v(0xF, 0);
                     }
 
-                    self.register.set_v(b as u8, vy - vx);
+                    self.register.set_v(b as u8, vy.overflowing_sub(vx).0);
                     return Ok(());
                 }
                 0xE => {
