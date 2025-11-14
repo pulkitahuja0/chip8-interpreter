@@ -2,6 +2,7 @@ mod chip8;
 mod config;
 mod registers;
 mod stack;
+mod hardware;
 
 // TODO: Config to skip bad opcodes instead of error (don't store in Config struct)
 
