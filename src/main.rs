@@ -13,8 +13,17 @@ mod stack;
 #[derive(Parser)]
 #[command(name="Chip8 Interpreter")]
 struct Args {
-    
-    file: PathBuf
+    file: PathBuf,
+    #[arg(long, default_value_t=true)]
+    bxnn: bool,
+    #[arg(long, default_value_t=false)]
+    skip_stack_underflow: bool,
+    #[arg(long, default_value_t=false)]
+    flag_fx1e_overflow: bool,
+    #[arg(long, default_value_t=false)]
+    shift_in_place_8xy: bool,
+    #[arg(long, default_value_t=false)]
+    increment_i_on_mem: bool
 }
 
 // TODO: Config to skip bad opcodes instead of error (don't store in Config struct)
@@ -25,14 +34,14 @@ fn main() {
     let mut file = File::open(&args.file)
         .unwrap_or_else(|e| panic!("Failed to open file {}: {}", args.file.display(), e));
 
-    let bytes_read = file.read(&mut buffer).unwrap_or_else(|e| panic!("Failed to read file {}: {}", args.file.display(), e));
+    let _bytes_read = file.read(&mut buffer).unwrap_or_else(|e| panic!("Failed to read file {}: {}", args.file.display(), e));
 
 
     let config = Config {
-        skip_stack_underflow: false,
-        bxnn: true,
-        fx1e_overflow: false,
-        shift_in_place_8xy: false,
+        skip_stack_underflow: args.skip_stack_underflow,
+        bxnn: args.bxnn,
+        fx1e_overflow: args.flag_fx1e_overflow,
+        shift_in_place_8xy: args.shift_in_place_8xy,
         increment_i_on_mem: false
     };
 
