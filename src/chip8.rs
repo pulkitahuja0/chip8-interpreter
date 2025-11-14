@@ -390,13 +390,13 @@ impl Chip8 {
                 for i in 0..d {
                     let byte = self.memory[(self.register.get_index() + i) as usize];
                     match self.hardware.display_row(byte, vx, vy + i as u8) {
-                        Ok(()) => {},
-                        Err(err) => return Err(sub_error(opcode, pc, err))
+                        Ok(()) => {}
+                        Err(err) => return Err(sub_error(opcode, pc, err)),
                     }
                 }
                 match self.hardware.draw() {
                     Ok(()) => Ok(()),
-                    Err(err) => Err(sub_error(opcode, pc, err))
+                    Err(err) => Err(sub_error(opcode, pc, err)),
                 }
             }
             0xE => {

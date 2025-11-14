@@ -4,17 +4,20 @@ use std::{
 };
 
 use crossterm::{
-    ExecutableCommand, QueueableCommand, cursor, event::{Event, KeyCode, KeyEvent, KeyEventKind, poll, read}, style::{self, Stylize}, terminal
+    ExecutableCommand, QueueableCommand, cursor,
+    event::{Event, KeyCode, KeyEvent, KeyEventKind, poll, read},
+    style::{self, Stylize},
+    terminal,
 };
 
 struct Display {
-    buffer: [[bool; 64]; 32] // TODO: bit pack u8 array instead
+    buffer: [[bool; 64]; 32], // TODO: bit pack u8 array instead
 }
 
 impl Display {
     pub fn new() -> Self {
         Self {
-            buffer: [[false; 64]; 32]
+            buffer: [[false; 64]; 32],
         }
     }
 
@@ -40,7 +43,7 @@ impl Display {
 
 pub struct Hardware {
     stdout: Stdout,
-    display: Display
+    display: Display,
 }
 
 fn value_to_char(value: u8) -> Result<char, &'static str> {
@@ -90,7 +93,10 @@ fn char_to_value(c: char) -> Result<u8, &'static str> {
 impl Hardware {
     pub fn new() -> Self {
         let stdout = io::stdout();
-        Self { stdout, display: Display::new() }
+        Self {
+            stdout,
+            display: Display::new(),
+        }
     }
 
     pub fn clear(&mut self) -> Result<(), &'static str> {
@@ -179,7 +185,7 @@ impl Hardware {
 
         for i in 0..8 {
             if x + i > 63 {
-                break
+                break;
             }
             self.display.set(x + i, y, pixels[i as usize]);
         }
@@ -192,8 +198,7 @@ impl Hardware {
             .stdout
             .execute(terminal::Clear(terminal::ClearType::All))
         {
-            Ok(_) => {
-            }
+            Ok(_) => {}
             Err(_) => {
                 return Err("Clear display error");
             }
@@ -202,17 +207,26 @@ impl Hardware {
         for y in 0..32 {
             for x in 0..64 {
                 if self.display.get(x, y) {
-                    let _ = self.stdout.queue(cursor::MoveTo(x as u16, y as u16)).unwrap()
-                    .queue(style::PrintStyledContent("█".with(style::Color::Yellow)));
+                    let _ = self
+                        .stdout
+                        .queue(cursor::MoveTo(x as u16, y as u16))
+                        .unwrap()
+                        .queue(style::PrintStyledContent("█".with(style::Color::Yellow)));
                 } else {
-                    let _ = self.stdout.queue(cursor::MoveTo(x as u16, y as u16)).unwrap().queue(style::PrintStyledContent("█".with(style::Color::DarkYellow)));
+                    let _ = self
+                        .stdout
+                        .queue(cursor::MoveTo(x as u16, y as u16))
+                        .unwrap()
+                        .queue(style::PrintStyledContent(
+                            "█".with(style::Color::DarkYellow),
+                        ));
                 }
             }
         }
 
         match self.stdout.flush() {
             Ok(()) => Ok(()),
-            Err(_) => Err("Stdout flush error")
+            Err(_) => Err("Stdout flush error"),
         }
     }
 
