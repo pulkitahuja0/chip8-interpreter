@@ -384,8 +384,20 @@ impl Chip8 {
                 return Ok(());
             }
             0xD => {
-                // TODO: Display
-                return Ok(());
+                let vx = self.register.get_v(b as u8) & 63;
+                let vy = self.register.get_v(c as u8) & 31;
+                self.register.set_v(0xF, 0);
+                for i in 0..d {
+                    let byte = self.memory[(self.register.get_index() + i) as usize];
+                    match self.hardware.display_row(byte, vx, vy + i as u8) {
+                        Ok(()) => {},
+                        Err(err) => return Err(sub_error(opcode, pc, err))
+                    }
+                }
+                match self.hardware.draw() {
+                    Ok(()) => Ok(()),
+                    Err(err) => Err(sub_error(opcode, pc, err))
+                }
             }
             0xE => {
                 if c == 9 && d == 0xE {
