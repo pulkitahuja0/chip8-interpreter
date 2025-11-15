@@ -147,7 +147,6 @@ impl Chip8 {
                             return Err(sub_error(opcode, pc, err));
                         }
                     }
-                    self.pc = nnn;
                     return Ok(());
                 } else {
                     return Err(opcode_error(opcode, pc));
