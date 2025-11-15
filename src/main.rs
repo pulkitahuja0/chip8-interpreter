@@ -15,7 +15,7 @@ mod stack;
 struct Args {
     file: PathBuf,
     #[arg(long, default_value_t = true)]
-    bxnn: bool,
+    bnnn: bool,
     #[arg(long, default_value_t = false)]
     skip_stack_underflow: bool,
     #[arg(long, default_value_t = false)]
@@ -40,7 +40,7 @@ fn main() {
 
     let config = Config {
         skip_stack_underflow: args.skip_stack_underflow,
-        bxnn: args.bxnn,
+        bxnn: !args.bnnn,
         fx1e_overflow: args.flag_fx1e_overflow,
         shift_in_place_8xy: args.shift_in_place_8xy,
         increment_i_on_mem: args.increment_i_on_mem,
