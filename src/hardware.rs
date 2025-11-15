@@ -180,17 +180,20 @@ impl Hardware {
         }
     }
 
-    pub fn display_row(&mut self, byte: u8, x: u8, y: u8) -> Result<(), &'static str> {
+    pub fn display_row(&mut self, byte: u8, x: u8, y: u8) -> Result<bool, &'static str> {
         let pixels = Self::extract_pixels(byte);
+        let mut collision = false;
 
         for i in 0..8 {
             if x + i > 63 {
                 break;
             }
-            self.display.set(x + i, y, pixels[i as usize]);
+            if self.display.set(x + i, y, pixels[i as usize]) {
+                collision = true;
+            }
         }
 
-        Ok(())
+        Ok(collision)
     }
 
     pub fn draw(&mut self) -> Result<(), &'static str> {
