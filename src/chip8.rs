@@ -61,7 +61,6 @@ impl Chip8 {
 
         memory[..FONTSET.len()].copy_from_slice(&FONTSET);
 
-        // TODO: Handle uneven ROM (rom.len() % 2 != 0)
         if rom.len() % 2 != 0 {
             panic!("Bad ROM size: must be even number of bytes");
         }
