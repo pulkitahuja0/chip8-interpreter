@@ -89,7 +89,9 @@ impl Hardware {
     pub fn new() -> Self {
         let mut stdout = io::stdout();
         stdout.queue(terminal::SetSize(64, 32)).unwrap();
-        stdout.queue(terminal::SetTitle("CHIP-8 Interpreter")).unwrap();
+        stdout
+            .queue(terminal::SetTitle("CHIP-8 Interpreter"))
+            .unwrap();
         Self {
             stdout,
             display: Display::new(),
@@ -132,9 +134,7 @@ impl Hardware {
     pub fn get_key() -> Result<u8, &'static str> {
         match Self::read_until() {
             Ok(c) => match char_to_value(c) {
-                Ok(v) => {
-                    return Ok(v)
-                },
+                Ok(v) => return Ok(v),
                 Err(err) => return Err(err),
             },
             Err(err) => return Err(err),
@@ -144,34 +144,36 @@ impl Hardware {
     fn read_until() -> Result<char, &'static str> {
         loop {
             match read() {
-                Ok(e) => if let Event::Key(key_event) = e {
-                if key_event.kind == KeyEventKind::Press {
-                    if key_event.code == KeyCode::Char('0')
-                        || key_event.code == KeyCode::Char('1')
-                        || key_event.code == KeyCode::Char('2')
-                        || key_event.code == KeyCode::Char('3')
-                        || key_event.code == KeyCode::Char('4')
-                        || key_event.code == KeyCode::Char('5')
-                        || key_event.code == KeyCode::Char('6')
-                        || key_event.code == KeyCode::Char('7')
-                        || key_event.code == KeyCode::Char('8')
-                        || key_event.code == KeyCode::Char('9')
-                        || key_event.code == KeyCode::Char('a')
-                        || key_event.code == KeyCode::Char('b')
-                        || key_event.code == KeyCode::Char('c')
-                        || key_event.code == KeyCode::Char('d')
-                        || key_event.code == KeyCode::Char('e')
-                        || key_event.code == KeyCode::Char('f')
-                    {
-                        match key_event.code.as_char() {
-                            None => return Err("Event reading error"),
-                            Some(ch) => return Ok(ch),
+                Ok(e) => {
+                    if let Event::Key(key_event) = e {
+                        if key_event.kind == KeyEventKind::Press {
+                            if key_event.code == KeyCode::Char('0')
+                                || key_event.code == KeyCode::Char('1')
+                                || key_event.code == KeyCode::Char('2')
+                                || key_event.code == KeyCode::Char('3')
+                                || key_event.code == KeyCode::Char('4')
+                                || key_event.code == KeyCode::Char('5')
+                                || key_event.code == KeyCode::Char('6')
+                                || key_event.code == KeyCode::Char('7')
+                                || key_event.code == KeyCode::Char('8')
+                                || key_event.code == KeyCode::Char('9')
+                                || key_event.code == KeyCode::Char('a')
+                                || key_event.code == KeyCode::Char('b')
+                                || key_event.code == KeyCode::Char('c')
+                                || key_event.code == KeyCode::Char('d')
+                                || key_event.code == KeyCode::Char('e')
+                                || key_event.code == KeyCode::Char('f')
+                            {
+                                match key_event.code.as_char() {
+                                    None => return Err("Event reading error"),
+                                    Some(ch) => return Ok(ch),
+                                }
+                            }
+                        } else {
+                            continue;
                         }
                     }
-                } else {
-                    continue;
                 }
-            },
                 Err(_) => return Err("Event reading error"),
             };
         }
