@@ -27,6 +27,7 @@ struct Args {
 }
 
 // TODO: Config to skip bad opcodes instead of error (don't store in Config struct)
+// TODO: Config to set speed of execution (timers and cycles)
 fn main() {
     let args = Args::parse();
     let mut buffer = [0u8; 3584];

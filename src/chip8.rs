@@ -503,7 +503,12 @@ impl Chip8 {
                 }
                 3 => {
                     // FX33
-                    // TODO: Binary code to decimal conversion
+                    // Converts Vx to decimal and stores digits in memory at I, I+1, I+2
+                    let vx = self.register.get_v(b as u8);
+                    self.memory[self.register.get_index() as usize] = vx / 100;
+                    self.memory[(self.register.get_index() + 1) as usize] = (vx % 100) / 10;
+                    self.memory[(self.register.get_index() + 2) as usize] = vx % 10;
+
                     return Ok(());
                 }
                 5 => {
