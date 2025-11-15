@@ -62,8 +62,11 @@ impl Chip8 {
         memory[..FONTSET.len()].copy_from_slice(&FONTSET);
 
         // TODO: Handle uneven ROM (rom.len() % 2 != 0)
+        if rom.len() % 2 != 0 {
+            panic!("Bad ROM size: must be even number of bytes");
+        }
         if 0x200 + rom.len() > MEMORY_SIZE {
-            panic!("Bad ROM detected");
+            panic!("ROM size exceeds available memory");
         }
 
         memory[0x200..(0x200 + rom.len())].copy_from_slice(rom);
