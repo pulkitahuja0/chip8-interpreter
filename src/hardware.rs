@@ -5,7 +5,7 @@ use std::{
 
 use crossterm::{
     ExecutableCommand, QueueableCommand, cursor,
-    event::{Event, KeyCode, KeyEvent, KeyEventKind, poll, read},
+    event::{Event, KeyCode, KeyEventKind, poll, read},
     style::{self, Stylize},
     terminal,
 };
