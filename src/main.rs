@@ -60,8 +60,10 @@ fn main() {
     loop {
         match cpu.step() {
             Ok(()) => {}
-            Err(err) => if !args.skip_bad_opcodes {
-                panic!("Err: {}", err)
+            Err(err) => {
+                if !args.skip_bad_opcodes {
+                    panic!("Err: {}", err)
+                }
             }
         }
     }
