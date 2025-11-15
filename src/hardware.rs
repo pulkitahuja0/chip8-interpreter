@@ -5,7 +5,7 @@ use std::{
 
 use crossterm::{
     ExecutableCommand, QueueableCommand, cursor,
-    event::{Event, KeyCode, KeyEvent, KeyEventKind, poll, read},
+    event::{Event, KeyCode, KeyEventKind, poll, read},
     style::{self, Stylize},
     terminal,
 };
@@ -27,13 +27,8 @@ impl Display {
 
     pub fn set(&mut self, x: u8, y: u8, pixel: bool) -> bool {
         let curr = self.buffer[y as usize][x as usize];
-        if curr && pixel {
-            self.buffer[y as usize][x as usize] = false;
-            return curr;
-        } else if !curr && pixel {
-            self.buffer[y as usize][x as usize] = true;
-        }
-        false
+        self.buffer[y as usize][x as usize] ^= pixel;
+        curr && pixel
     }
 
     pub fn get(&self, x: u8, y: u8) -> bool {
@@ -92,7 +87,11 @@ fn char_to_value(c: char) -> Result<u8, &'static str> {
 
 impl Hardware {
     pub fn new() -> Self {
-        let stdout = io::stdout();
+        let mut stdout = io::stdout();
+        stdout.queue(terminal::SetSize(64, 32)).unwrap();
+        stdout
+            .queue(terminal::SetTitle("CHIP-8 Interpreter"))
+            .unwrap();
         Self {
             stdout,
             display: Display::new(),
@@ -110,7 +109,7 @@ impl Hardware {
             Err(err) => return Err(err),
         };
 
-        match poll(Duration::from_secs(0)) {
+        match poll(Duration::from_secs(500)) {
             Ok(available) => {
                 if !available {
                     return Ok(false);
@@ -144,53 +143,56 @@ impl Hardware {
 
     fn read_until() -> Result<char, &'static str> {
         loop {
-            let event = match read() {
-                Ok(e) => e,
-                Err(_) => return Err("Event reading error"),
-            };
-
-            if let Event::Key(key_event) = event {
-                if key_event.kind == KeyEventKind::Press {
-                    if key_event.code == KeyCode::Char('0')
-                        || key_event.code == KeyCode::Char('1')
-                        || key_event.code == KeyCode::Char('2')
-                        || key_event.code == KeyCode::Char('3')
-                        || key_event.code == KeyCode::Char('4')
-                        || key_event.code == KeyCode::Char('5')
-                        || key_event.code == KeyCode::Char('6')
-                        || key_event.code == KeyCode::Char('7')
-                        || key_event.code == KeyCode::Char('8')
-                        || key_event.code == KeyCode::Char('9')
-                        || key_event.code == KeyCode::Char('a')
-                        || key_event.code == KeyCode::Char('b')
-                        || key_event.code == KeyCode::Char('c')
-                        || key_event.code == KeyCode::Char('d')
-                        || key_event.code == KeyCode::Char('e')
-                        || key_event.code == KeyCode::Char('f')
-                    {
-                        match key_event.code.as_char() {
-                            None => return Err("Event reading error"),
-                            Some(ch) => return Ok(ch),
+            match read() {
+                Ok(e) => {
+                    if let Event::Key(key_event) = e {
+                        if key_event.kind == KeyEventKind::Press {
+                            if key_event.code == KeyCode::Char('0')
+                                || key_event.code == KeyCode::Char('1')
+                                || key_event.code == KeyCode::Char('2')
+                                || key_event.code == KeyCode::Char('3')
+                                || key_event.code == KeyCode::Char('4')
+                                || key_event.code == KeyCode::Char('5')
+                                || key_event.code == KeyCode::Char('6')
+                                || key_event.code == KeyCode::Char('7')
+                                || key_event.code == KeyCode::Char('8')
+                                || key_event.code == KeyCode::Char('9')
+                                || key_event.code == KeyCode::Char('a')
+                                || key_event.code == KeyCode::Char('b')
+                                || key_event.code == KeyCode::Char('c')
+                                || key_event.code == KeyCode::Char('d')
+                                || key_event.code == KeyCode::Char('e')
+                                || key_event.code == KeyCode::Char('f')
+                            {
+                                match key_event.code.as_char() {
+                                    None => return Err("Event reading error"),
+                                    Some(ch) => return Ok(ch),
+                                }
+                            }
+                        } else {
+                            continue;
                         }
                     }
-                } else {
-                    continue;
                 }
-            }
+                Err(_) => return Err("Event reading error"),
+            };
         }
     }
 
-    pub fn display_row(&mut self, byte: u8, x: u8, y: u8) -> Result<(), &'static str> {
+    pub fn display_row(&mut self, byte: u8, x: u8, y: u8) -> Result<bool, &'static str> {
         let pixels = Self::extract_pixels(byte);
+        let mut collision = false;
 
         for i in 0..8 {
             if x + i > 63 {
                 break;
             }
-            self.display.set(x + i, y, pixels[i as usize]);
+            if self.display.set(x + i, y, pixels[i as usize]) {
+                collision = true;
+            }
         }
 
-        Ok(())
+        Ok(collision)
     }
 
     pub fn draw(&mut self) -> Result<(), &'static str> {

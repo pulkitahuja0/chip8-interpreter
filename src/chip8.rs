@@ -147,7 +147,6 @@ impl Chip8 {
                             return Err(sub_error(opcode, pc, err));
                         }
                     }
-                    self.pc = nnn;
                     return Ok(());
                 } else {
                     return Err(opcode_error(opcode, pc));
@@ -172,7 +171,7 @@ impl Chip8 {
                 let nn = create_nn(c, d);
                 {
                     let vx = self.register.get_v(b as u8);
-                    if vx == nn as u8 {
+                    if vx != nn as u8 {
                         self.pc += 2;
                     }
 
@@ -206,7 +205,7 @@ impl Chip8 {
                 // Vx = Vx + NN
                 let nn = create_nn(c, d);
                 let vx = self.register.get_v(b as u8);
-                self.register.set_v(b as u8, vx + (nn as u8));
+                self.register.set_v(b as u8, vx.overflowing_add(nn as u8).0);
                 return Ok(());
             }
             8 => match d {
@@ -270,7 +269,7 @@ impl Chip8 {
                         self.register.set_v(0xF, 0);
                     }
 
-                    self.register.set_v(b as u8, vx - vy);
+                    self.register.set_v(b as u8, vx.overflowing_sub(vy).0);
                     return Ok(());
                 }
                 6 => {
@@ -301,7 +300,7 @@ impl Chip8 {
                         self.register.set_v(0xF, 0);
                     }
 
-                    self.register.set_v(b as u8, vy - vx);
+                    self.register.set_v(b as u8, vy.overflowing_sub(vx).0);
                     return Ok(());
                 }
                 0xE => {
@@ -384,13 +383,20 @@ impl Chip8 {
                 return Ok(());
             }
             0xD => {
+                // DXYN
+                // Draw sprite at (Vx, Vy) with height N
+                // VF = 1 if any pixels are flipped from set to unset
                 let vx = self.register.get_v(b as u8) & 63;
                 let vy = self.register.get_v(c as u8) & 31;
                 self.register.set_v(0xF, 0);
                 for i in 0..d {
                     let byte = self.memory[(self.register.get_index() + i) as usize];
                     match self.hardware.display_row(byte, vx, vy + i as u8) {
-                        Ok(()) => {}
+                        Ok(flag) => {
+                            if flag {
+                                self.register.set_v(0xF, 1);
+                            }
+                        }
                         Err(err) => return Err(sub_error(opcode, pc, err)),
                     }
                 }
