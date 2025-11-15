@@ -31,6 +31,9 @@ struct Args {
     #[arg(long, default_value_t = false)]
     #[arg(help = "Increment I by X + 1 after FX55 and FX65")]
     increment_i_on_mem: bool,
+    #[arg(long, default_value_t = false)]
+    #[arg(help = "Skip invalid opcodes instead of crashing program")]
+    skip_bad_opcodes: bool,
 }
 
 // TODO: Config to skip bad opcodes instead of error (don't store in Config struct)
@@ -58,7 +61,7 @@ fn main() {
     loop {
         match cpu.step() {
             Ok(()) => {}
-            Err(err) => {
+            Err(err) => if !args.skip_bad_opcodes {
                 panic!("Err: {}", err)
             }
         }
