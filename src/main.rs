@@ -11,22 +11,31 @@ mod registers;
 mod stack;
 
 #[derive(Parser)]
-#[command(name = "Chip8 Interpreter")]
+#[command(name = "CHIP-8 Interpreter")]
+#[command(about = "A CHIP-8 interpreter for the terminal", long_about = None)]
+#[command(next_line_help = true)]
 struct Args {
     file: PathBuf,
     #[arg(long, default_value_t = true)]
-    bxnn: bool,
+    #[arg(help = "Use BNNN behavior instead of BXNN")]
+    bnnn: bool,
     #[arg(long, default_value_t = false)]
+    #[arg(help = "Skip stack underflow errors (returning subroutines from an empty stack)")]
     skip_stack_underflow: bool,
     #[arg(long, default_value_t = false)]
+    #[arg(help = "Set VF to 1 if I + VX > 0xFFF")]
     flag_fx1e_overflow: bool,
     #[arg(long, default_value_t = false)]
+    #[arg(help = "Ignore Y for 8XY6 and 8XYE shifts")]
     shift_in_place_8xy: bool,
     #[arg(long, default_value_t = false)]
+    #[arg(help = "Increment I by X + 1 after FX55 and FX65")]
     increment_i_on_mem: bool,
+    #[arg(long, default_value_t = false)]
+    #[arg(help = "Skip invalid opcodes instead of crashing program")]
+    skip_bad_opcodes: bool,
 }
 
-// TODO: Config to skip bad opcodes instead of error (don't store in Config struct)
 // TODO: Config to set speed of execution (timers and cycles)
 fn main() {
     let args = Args::parse();
@@ -40,7 +49,7 @@ fn main() {
 
     let config = Config {
         skip_stack_underflow: args.skip_stack_underflow,
-        bxnn: args.bxnn,
+        bxnn: !args.bnnn,
         fx1e_overflow: args.flag_fx1e_overflow,
         shift_in_place_8xy: args.shift_in_place_8xy,
         increment_i_on_mem: args.increment_i_on_mem,
@@ -51,7 +60,7 @@ fn main() {
     loop {
         match cpu.step() {
             Ok(()) => {}
-            Err(err) => {
+            Err(err) => if !args.skip_bad_opcodes {
                 panic!("Err: {}", err)
             }
         }
