@@ -11,18 +11,25 @@ mod registers;
 mod stack;
 
 #[derive(Parser)]
-#[command(name = "Chip8 Interpreter")]
+#[command(name = "CHIP-8 Interpreter")]
+#[command(about = "A CHIP-8 interpreter for the terminal", long_about = None)]
+#[command(next_line_help = true)]
 struct Args {
     file: PathBuf,
     #[arg(long, default_value_t = true)]
+    #[arg(help = "Use BNNN behavior instead of BXNN")]
     bnnn: bool,
     #[arg(long, default_value_t = false)]
+    #[arg(help = "Skip stack underflow errors (returning subroutines from an empty stack)")]
     skip_stack_underflow: bool,
     #[arg(long, default_value_t = false)]
+    #[arg(help = "Set VF to 1 if I + VX > 0xFFF")]
     flag_fx1e_overflow: bool,
     #[arg(long, default_value_t = false)]
+    #[arg(help = "Ignore Y for 8XY6 and 8XYE shifts")]
     shift_in_place_8xy: bool,
     #[arg(long, default_value_t = false)]
+    #[arg(help = "Increment I by X + 1 after FX55 and FX65")]
     increment_i_on_mem: bool,
 }
 
