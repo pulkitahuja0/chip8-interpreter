@@ -27,13 +27,8 @@ impl Display {
 
     pub fn set(&mut self, x: u8, y: u8, pixel: bool) -> bool {
         let curr = self.buffer[y as usize][x as usize];
-        if curr && pixel {
-            self.buffer[y as usize][x as usize] = false;
-            return curr;
-        } else if !curr && pixel {
-            self.buffer[y as usize][x as usize] = true;
-        }
-        false
+        self.buffer[y as usize][x as usize] ^= pixel;
+        curr && pixel
     }
 
     pub fn get(&self, x: u8, y: u8) -> bool {
