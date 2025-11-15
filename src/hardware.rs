@@ -87,7 +87,9 @@ fn char_to_value(c: char) -> Result<u8, &'static str> {
 
 impl Hardware {
     pub fn new() -> Self {
-        let stdout = io::stdout();
+        let mut stdout = io::stdout();
+        stdout.queue(terminal::SetSize(64, 32)).unwrap();
+        stdout.queue(terminal::SetTitle("CHIP-8 Interpreter")).unwrap();
         Self {
             stdout,
             display: Display::new(),
