@@ -183,6 +183,10 @@ impl Hardware {
         let pixels = Self::extract_pixels(byte);
         let mut collision = false;
 
+        if y > 31 {
+            return Ok(false);
+        }
+
         for i in 0..8 {
             if x + i > 63 {
                 break;
