@@ -14,20 +14,22 @@ impl Timers {
 
         let delay_clone = Arc::clone(&delay_timer);
         let sound_clone = Arc::clone(&sound_timer);
-        
-        thread::spawn(move || loop {
-            thread::sleep(Duration::from_millis(16)); // 60Hz
 
-            if let Ok(mut delay) = delay_clone.lock() {
-                if *delay > 0 {
-                    *delay -= 1;
+        thread::spawn(move || {
+            loop {
+                thread::sleep(Duration::from_millis(16)); // 60Hz
+
+                if let Ok(mut delay) = delay_clone.lock() {
+                    if *delay > 0 {
+                        *delay -= 1;
+                    }
                 }
-            }
 
-            if let Ok(mut sound) = sound_clone.lock() {
-                if *sound > 0 {
-                    *sound -= 1;
-                    // TODO: Play sound
+                if let Ok(mut sound) = sound_clone.lock() {
+                    if *sound > 0 {
+                        *sound -= 1;
+                        // TODO: Play sound
+                    }
                 }
             }
         });
