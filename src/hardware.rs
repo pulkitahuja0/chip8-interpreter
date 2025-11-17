@@ -36,6 +36,7 @@ impl Display {
     }
 }
 
+// TODO: Config for inputs
 pub struct Hardware {
     stdout: Stdout,
     display: Display,

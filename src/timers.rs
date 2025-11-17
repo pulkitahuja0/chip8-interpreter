@@ -16,7 +16,7 @@ impl Timers {
         let sound_clone = Arc::clone(&sound_timer);
         
         thread::spawn(move || loop {
-            thread::sleep(Duration::from_millis(16));
+            thread::sleep(Duration::from_millis(16)); // 60Hz
 
             if let Ok(mut delay) = delay_clone.lock() {
                 if *delay > 0 {
