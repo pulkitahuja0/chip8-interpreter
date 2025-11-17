@@ -545,6 +545,10 @@ impl Chip8 {
                             return Err(opcode_error(opcode, pc));
                         }
 
+                        if self.register.get_index() + b > 0xFFF {
+                            return Err(sub_error(opcode, pc, "Out of bounds memory access"));
+                        }
+
                         for j in 0..=b {
                             self.memory[(self.register.get_index() + j) as usize] =
                                 self.register.get_v(j as u8);
@@ -565,6 +569,10 @@ impl Chip8 {
                     if d == 5 {
                         // FX65
                         // Load memory into registers
+
+                        if self.register.get_index() + b > 0xFFF {
+                            return Err(sub_error(opcode, pc, "Out of bounds memory access"));
+                        }
                         for j in 0..=b {
                             self.register.set_v(
                                 j as u8,
