@@ -395,8 +395,14 @@ impl Chip8 {
                 let vx = self.register.get_v(b as u8) & 63;
                 let vy = self.register.get_v(c as u8) & 31;
                 self.register.set_v(0xF, 0);
-                for i in 0..d {
-                    let byte = self.memory[(self.register.get_index() + i) as usize];
+
+                let index = self.register.get_index() as usize;
+                if index + (d as usize) - 1 > 0xFFF {
+                    return Err(sub_error(opcode, pc, "Out of bounds memory access"));
+                }
+
+                for i in 0..(d as usize) {
+                    let byte = self.memory[index + i];
                     match self.hardware.display_row(byte, vx, vy + i as u8) {
                         Ok(flag) => {
                             if flag {
