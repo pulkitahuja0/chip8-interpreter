@@ -110,7 +110,7 @@ impl Hardware {
             Err(err) => return Err(err),
         };
 
-        match poll(Duration::from_secs(500)) {
+        match poll(Duration::from_millis(500)) {
             Ok(available) => {
                 if !available {
                     return Ok(false);
