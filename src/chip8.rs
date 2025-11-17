@@ -541,9 +541,6 @@ impl Chip8 {
                     if d == 5 {
                         // FX55
                         // Load registers into memory
-                        if b > 15 {
-                            return Err(opcode_error(opcode, pc));
-                        }
 
                         if self.register.get_index() + b > 0xFFF {
                             return Err(sub_error(opcode, pc, "Out of bounds memory access"));
