@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read, path::PathBuf};
+use std::{fs::File, io::Read, path::PathBuf, time::{Duration, Instant}};
 
 use clap::{Parser, command};
 
@@ -9,6 +9,7 @@ mod config;
 mod hardware;
 mod registers;
 mod stack;
+mod timers;
 
 #[derive(Parser)]
 #[command(name = "CHIP-8 Interpreter")]
@@ -34,6 +35,9 @@ struct Args {
     #[arg(long, default_value_t = false)]
     #[arg(help = "Skip invalid opcodes instead of crashing program")]
     skip_bad_opcodes: bool,
+    #[arg(long, default_value_t = 500)]
+    #[arg(help = "Set the instruction speed in Hz")]
+    cpu_hz: u32,
 }
 
 // TODO: Config to set speed of execution (timers and cycles)
@@ -57,7 +61,15 @@ fn main() {
 
     let mut cpu = Chip8::new(&buffer, config);
 
+    let cycle_duration = Duration::from_secs_f32(1.0 / args.cpu_hz as f32);
+    let mut last_cycle = Instant::now();
+
     loop {
+        let elapsed = last_cycle.elapsed();
+        if elapsed < cycle_duration {
+            std::thread::sleep(cycle_duration - elapsed);
+        }
+        last_cycle = Instant::now();
         match cpu.step() {
             Ok(()) => {}
             Err(err) => {

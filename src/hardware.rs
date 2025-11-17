@@ -36,6 +36,7 @@ impl Display {
     }
 }
 
+// TODO: Config for inputs
 pub struct Hardware {
     stdout: Stdout,
     display: Display,
@@ -109,7 +110,7 @@ impl Hardware {
             Err(err) => return Err(err),
         };
 
-        match poll(Duration::from_secs(500)) {
+        match poll(Duration::from_millis(500)) {
             Ok(available) => {
                 if !available {
                     return Ok(false);
@@ -182,6 +183,10 @@ impl Hardware {
     pub fn display_row(&mut self, byte: u8, x: u8, y: u8) -> Result<bool, &'static str> {
         let pixels = Self::extract_pixels(byte);
         let mut collision = false;
+
+        if y > 31 {
+            return Ok(false);
+        }
 
         for i in 0..8 {
             if x + i > 63 {

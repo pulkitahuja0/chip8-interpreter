@@ -1,0 +1,69 @@
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+
+pub struct Timers {
+    delay_timer: Arc<Mutex<u8>>,
+    sound_timer: Arc<Mutex<u8>>,
+}
+
+impl Timers {
+    pub fn new() -> Self {
+        let delay_timer = Arc::new(Mutex::new(0));
+        let sound_timer = Arc::new(Mutex::new(0));
+
+        let delay_clone = Arc::clone(&delay_timer);
+        let sound_clone = Arc::clone(&sound_timer);
+
+        thread::spawn(move || {
+            loop {
+                thread::sleep(Duration::from_millis(16)); // 60Hz
+
+                if let Ok(mut delay) = delay_clone.lock() {
+                    if *delay > 0 {
+                        *delay -= 1;
+                    }
+                }
+
+                if let Ok(mut sound) = sound_clone.lock() {
+                    if *sound > 0 {
+                        *sound -= 1;
+                        // TODO: Play sound
+                    }
+                }
+            }
+        });
+
+        Self {
+            delay_timer,
+            sound_timer,
+        }
+    }
+
+    pub fn get_delay(&self) -> Result<u8, &'static str> {
+        match self.delay_timer.lock() {
+            Ok(value) => Ok(*value),
+            Err(_) => Err("Failed to lock delay timer"),
+        }
+    }
+
+    pub fn set_delay(&self, value: u8) -> Result<(), &'static str> {
+        match self.delay_timer.lock() {
+            Ok(mut timer) => {
+                *timer = value;
+                Ok(())
+            }
+            Err(_) => Err("Failed to lock delay timer"),
+        }
+    }
+
+    pub fn set_sound(&self, value: u8) -> Result<(), &'static str> {
+        match self.sound_timer.lock() {
+            Ok(mut timer) => {
+                *timer = value;
+                Ok(())
+            }
+            Err(_) => Err("Failed to lock sound timer"),
+        }
+    }
+}
