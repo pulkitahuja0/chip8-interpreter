@@ -1,4 +1,9 @@
-use std::{fs::File, io::Read, path::PathBuf, time::{Duration, Instant}};
+use std::{
+    fs::File,
+    io::Read,
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use clap::{Parser, command};
 
