@@ -540,7 +540,7 @@ impl Chip8 {
                 5 => {
                     if d == 5 {
                         // FX55
-                        // Load memory -> registers
+                        // Load registers into memory
                         if b > 15 {
                             return Err(opcode_error(opcode, pc));
                         }
@@ -564,7 +564,7 @@ impl Chip8 {
                 6 => {
                     if d == 5 {
                         // FX65
-                        // Load registers -> memory
+                        // Load memory into registers
                         for j in 0..=b {
                             self.register.set_v(
                                 j as u8,
