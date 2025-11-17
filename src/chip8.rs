@@ -5,6 +5,7 @@ use crate::config::Config;
 use crate::hardware::Hardware;
 use crate::registers::Registers;
 use crate::stack::Stack;
+use crate::timers::Timers;
 
 const MEMORY_SIZE: usize = 4096;
 
@@ -16,6 +17,7 @@ pub struct Chip8 {
     rng: ThreadRng,
     cfg: Config,
     hardware: Hardware,
+    timers: Timers,
 }
 
 fn opcode_error(opcode: u16, pc: u16) -> String {
@@ -78,6 +80,7 @@ impl Chip8 {
             rng: rand::rng(),
             cfg,
             hardware: Hardware::new(),
+            timers: Timers::new(),
         }
     }
 
@@ -446,7 +449,12 @@ impl Chip8 {
                 0 => {
                     if d == 7 {
                         // FX07
-                        // TODO: Timers
+                        // Vx = delay timer
+                        let delay = match self.timers.get_delay() {
+                            Ok(value) => value,
+                            Err(err) => return Err(sub_error(opcode, pc, err)),
+                        };
+                        self.register.set_v(b as u8, delay);
                         return Ok(());
                     } else if d == 0xA {
                         // FX0A
@@ -478,13 +486,27 @@ impl Chip8 {
                     } else if d == 5 {
                         if c == 1 {
                             // FX15
-                            // TODO: timer
+                            // Delay timer = Vx
+                            let vx = self.register.get_v(b as u8);
+                            match self.timers.set_delay(vx) {
+                                Ok(()) => {
+                                    return Ok(());
+                                }
+                                Err(err) => return Err(sub_error(opcode, pc, err)),
+                            }
                         }
                         return Ok(());
                     } else if d == 8 {
                         if c == 1 {
                             // FX18
-                            // TODO: timer
+                            // Sound timer = Vx
+                            let vx = self.register.get_v(b as u8);
+                            match self.timers.set_sound(vx) {
+                                Ok(()) => {
+                                    return Ok(());
+                                }
+                                Err(err) => return Err(sub_error(opcode, pc, err)),
+                            }
                         }
                         return Ok(());
                     } else {

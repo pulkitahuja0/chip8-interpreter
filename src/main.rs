@@ -9,6 +9,7 @@ mod config;
 mod hardware;
 mod registers;
 mod stack;
+mod timers;
 
 #[derive(Parser)]
 #[command(name = "CHIP-8 Interpreter")]
