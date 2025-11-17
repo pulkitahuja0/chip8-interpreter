@@ -84,6 +84,7 @@ impl Chip8 {
         }
     }
 
+    // TODO: out of bounds checks for opcodes accessing memory
     pub fn step(&mut self) -> Result<(), String> {
         let opcode = ((self.memory[self.pc as usize] as u16) << 8)
             | (self.memory[(self.pc + 1) as usize] as u16);
