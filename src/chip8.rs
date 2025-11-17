@@ -531,9 +531,15 @@ impl Chip8 {
                     // FX33
                     // Converts Vx to decimal and stores digits in memory at I, I+1, I+2
                     let vx = self.register.get_v(b as u8);
-                    self.memory[self.register.get_index() as usize] = vx / 100;
-                    self.memory[(self.register.get_index() + 1) as usize] = (vx % 100) / 10;
-                    self.memory[(self.register.get_index() + 2) as usize] = vx % 10;
+
+                    let index = self.register.get_index() as usize;
+                    if index + 2 > 0xFFF {
+                        return Err(sub_error(opcode, pc, "Out of bounds memory access"));
+                    }
+
+                    self.memory[index] = vx / 100;
+                    self.memory[index + 1] = (vx % 100) / 10;
+                    self.memory[index + 2] = vx % 10;
 
                     return Ok(());
                 }
