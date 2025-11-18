@@ -72,6 +72,8 @@ impl Chip8 {
 
         memory[0x200..(0x200 + rom.len())].copy_from_slice(rom);
 
+        let mute = cfg.mute;
+
         Self {
             memory,
             register: Registers::new(),
@@ -80,7 +82,7 @@ impl Chip8 {
             rng: rand::rng(),
             cfg,
             hardware: Hardware::new(),
-            timers: Timers::new(),
+            timers: Timers::new(mute),
         }
     }
 

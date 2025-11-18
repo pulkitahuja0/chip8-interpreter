@@ -28,7 +28,7 @@ pub struct Timers {
 }
 
 impl Timers {
-    pub fn new() -> Self {
+    pub fn new(mute: bool) -> Self {
         let delay_timer = Arc::new(Mutex::new(0));
         let sound_timer = Arc::new(Mutex::new(0));
 
@@ -50,7 +50,9 @@ impl Timers {
                 if let Ok(mut sound) = sound_clone.lock() {
                     if *sound > 0 {
                         *sound -= 1;
-                        sounds.play_sound();
+                        if !mute {
+                            sounds.play_sound();
+                        }
                     }
                 }
             }
