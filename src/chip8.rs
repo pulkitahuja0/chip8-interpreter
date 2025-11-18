@@ -84,7 +84,6 @@ impl Chip8 {
         }
     }
 
-    // TODO: out of bounds checks for opcodes accessing memory
     pub fn step(&mut self) -> Result<(), String> {
         let opcode = ((self.memory[self.pc as usize] as u16) << 8)
             | (self.memory[(self.pc + 1) as usize] as u16);
@@ -422,7 +421,6 @@ impl Chip8 {
                     // EX9E
                     // Skip if pressed
                     let vx = self.register.get_v(b as u8);
-                    // TODO: Should this be a member method?
                     match Hardware::check_key(vx) {
                         Ok(is_pressed) => {
                             if is_pressed {
@@ -437,7 +435,6 @@ impl Chip8 {
                     // EXA1
                     // Skipped if not pressed
                     let vx = self.register.get_v(b as u8);
-                    // TODO: Should this be a member method?
                     match Hardware::check_key(vx) {
                         Ok(is_pressed) => {
                             if !is_pressed {
