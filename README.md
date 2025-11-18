@@ -36,6 +36,8 @@ Options:
           Increment I by X + 1 after FX55 and FX65
       --skip-bad-opcodes
           Skip invalid opcodes instead of crashing program
+      --cpu-hz <CPU_HZ>
+          Set the instruction speed in Hz [default: 500]
   -h, --help
           Print help
 ```

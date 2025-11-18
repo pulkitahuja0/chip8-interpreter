@@ -84,7 +84,6 @@ impl Chip8 {
         }
     }
 
-    // TODO: out of bounds checks for opcodes accessing memory
     pub fn step(&mut self) -> Result<(), String> {
         let opcode = ((self.memory[self.pc as usize] as u16) << 8)
             | (self.memory[(self.pc + 1) as usize] as u16);
@@ -395,8 +394,14 @@ impl Chip8 {
                 let vx = self.register.get_v(b as u8) & 63;
                 let vy = self.register.get_v(c as u8) & 31;
                 self.register.set_v(0xF, 0);
-                for i in 0..d {
-                    let byte = self.memory[(self.register.get_index() + i) as usize];
+
+                let index = self.register.get_index() as usize;
+                if index + (d as usize) - 1 > 0xFFF {
+                    return Err(sub_error(opcode, pc, "Out of bounds memory access"));
+                }
+
+                for i in 0..(d as usize) {
+                    let byte = self.memory[index + i];
                     match self.hardware.display_row(byte, vx, vy + i as u8) {
                         Ok(flag) => {
                             if flag {
@@ -416,7 +421,6 @@ impl Chip8 {
                     // EX9E
                     // Skip if pressed
                     let vx = self.register.get_v(b as u8);
-                    // TODO: Should this be a member method?
                     match Hardware::check_key(vx) {
                         Ok(is_pressed) => {
                             if is_pressed {
@@ -431,7 +435,6 @@ impl Chip8 {
                     // EXA1
                     // Skipped if not pressed
                     let vx = self.register.get_v(b as u8);
-                    // TODO: Should this be a member method?
                     match Hardware::check_key(vx) {
                         Ok(is_pressed) => {
                             if !is_pressed {
@@ -531,18 +534,25 @@ impl Chip8 {
                     // FX33
                     // Converts Vx to decimal and stores digits in memory at I, I+1, I+2
                     let vx = self.register.get_v(b as u8);
-                    self.memory[self.register.get_index() as usize] = vx / 100;
-                    self.memory[(self.register.get_index() + 1) as usize] = (vx % 100) / 10;
-                    self.memory[(self.register.get_index() + 2) as usize] = vx % 10;
+
+                    let index = self.register.get_index() as usize;
+                    if index + 2 > 0xFFF {
+                        return Err(sub_error(opcode, pc, "Out of bounds memory access"));
+                    }
+
+                    self.memory[index] = vx / 100;
+                    self.memory[index + 1] = (vx % 100) / 10;
+                    self.memory[index + 2] = vx % 10;
 
                     return Ok(());
                 }
                 5 => {
                     if d == 5 {
                         // FX55
-                        // Load memory -> registers
-                        if b > 15 {
-                            return Err(opcode_error(opcode, pc));
+                        // Load registers into memory
+
+                        if self.register.get_index() + b > 0xFFF {
+                            return Err(sub_error(opcode, pc, "Out of bounds memory access"));
                         }
 
                         for j in 0..=b {
@@ -564,7 +574,11 @@ impl Chip8 {
                 6 => {
                     if d == 5 {
                         // FX65
-                        // Load registers -> memory
+                        // Load memory into registers
+
+                        if self.register.get_index() + b > 0xFFF {
+                            return Err(sub_error(opcode, pc, "Out of bounds memory access"));
+                        }
                         for j in 0..=b {
                             self.register.set_v(
                                 j as u8,

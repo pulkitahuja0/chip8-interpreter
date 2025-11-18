@@ -1,4 +1,9 @@
-use std::{fs::File, io::Read, path::PathBuf, time::{Duration, Instant}};
+use std::{
+    fs::File,
+    io::Read,
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use clap::{Parser, command};
 
@@ -40,7 +45,6 @@ struct Args {
     cpu_hz: u32,
 }
 
-// TODO: Config to set speed of execution (timers and cycles)
 fn main() {
     let args = Args::parse();
     let mut buffer = [0u8; 3584];
