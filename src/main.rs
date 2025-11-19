@@ -1,5 +1,9 @@
 use std::{
-    fs::File, io::Read, path::PathBuf, sync::atomic::AtomicBool, time::{Duration, Instant}
+    fs::File,
+    io::Read,
+    path::PathBuf,
+    sync::atomic::AtomicBool,
+    time::{Duration, Instant},
 };
 
 use clap::{Parser, command};
@@ -50,7 +54,8 @@ static TERMINATE: AtomicBool = AtomicBool::new(false);
 fn main() {
     ctrlc::set_handler(|| {
         TERMINATE.store(true, std::sync::atomic::Ordering::Relaxed);
-    }).expect("Error setting Ctrl-C handler");
+    })
+    .expect("Error setting Ctrl-C handler");
 
     let args = Args::parse();
     let mut buffer = [0u8; 3584];

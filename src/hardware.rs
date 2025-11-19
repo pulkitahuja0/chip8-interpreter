@@ -40,7 +40,7 @@ impl Display {
 pub struct Hardware {
     stdout: Stdout,
     display: Display,
-    old_dimensions: (usize, usize)
+    old_dimensions: (usize, usize),
 }
 
 fn value_to_char(value: u8) -> Result<char, &'static str> {
@@ -254,15 +254,15 @@ impl Hardware {
         // Clears, and resizes terminal
         match self.stdout.execute(terminal::ScrollDown(32)) {
             Ok(_stdout) => {
-                match self
-                    .stdout
-                    .execute(terminal::SetSize(self.old_dimensions.0 as u16, self.old_dimensions.1 as u16))
-                {
+                match self.stdout.execute(terminal::SetSize(
+                    self.old_dimensions.0 as u16,
+                    self.old_dimensions.1 as u16,
+                )) {
                     Ok(_) => Ok(()),
-                    Err(_err) => Err("clean up set size error")
+                    Err(_err) => Err("clean up set size error"),
                 }
-            },
-            Err(_err) => Err("clean up clear display error")
+            }
+            Err(_err) => Err("clean up clear display error"),
         }
     }
 }
