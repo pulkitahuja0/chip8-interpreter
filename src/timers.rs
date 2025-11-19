@@ -2,24 +2,25 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use rodio::Sink;
+use rodio::{OutputStream, Sink};
 use rodio::source::{SineWave, Source};
 
 struct Sounds {
     sink: Sink,
+    _stream: OutputStream,
 }
 
 impl Sounds {
     pub fn new() -> Self {
-        let stream_handle =
+        let stream =
             rodio::OutputStreamBuilder::open_default_stream().expect("open default stream");
-        let sink = Sink::connect_new(&stream_handle.mixer());
-        Self { sink }
+        let sink = Sink::connect_new(&stream.mixer());
+        Self { sink, _stream: stream }
     }
 
     pub fn play_sound(&self) {
         let source = SineWave::new(440.0)
-            .take_duration(Duration::from_secs_f32(0.25))
+            .take_duration(Duration::from_millis(50))
             .amplify(0.20);
         self.sink.append(source);
     }
