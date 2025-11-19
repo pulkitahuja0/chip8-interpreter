@@ -90,11 +90,11 @@ fn char_to_value(c: char) -> Result<u8, &'static str> {
 impl Hardware {
     pub fn new() -> Self {
         let mut stdout = io::stdout();
+        let old_dimensions = term_size::dimensions().expect("Unable to get terminal size");
         stdout.queue(terminal::SetSize(64, 32)).unwrap();
         stdout
             .queue(terminal::SetTitle("CHIP-8 Interpreter"))
             .unwrap();
-        let old_dimensions = term_size::dimensions().expect("Unable to get terminal size");
         Self {
             stdout,
             display: Display::new(),
