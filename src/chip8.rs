@@ -21,7 +21,7 @@ pub struct Chip8 {
 }
 
 fn opcode_error(opcode: u16, pc: u16) -> String {
-    sub_error(opcode, pc, "Bad opcode")
+    sub_error(opcode, pc, "bad opcode")
 }
 
 fn sub_error(opcode: u16, pc: u16, error: &str) -> String {

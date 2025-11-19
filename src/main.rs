@@ -88,7 +88,7 @@ fn main() {
         match cpu.step() {
             Ok(()) => {}
             Err(err) => {
-                if args.skip_bad_opcodes && err.starts_with("Bad opcode") {
+                if args.skip_bad_opcodes && err.starts_with("bad opcode") {
                     continue;
                 } else {
                     panic!("Err: {}", err);
