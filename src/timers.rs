@@ -2,18 +2,48 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use rodio::{OutputStream, Sink};
+use rodio::source::{SineWave, Source};
+
+struct Sounds {
+    stream: OutputStream,
+}
+
+impl Sounds {
+    pub fn new() -> Self {
+        let stream =
+            rodio::OutputStreamBuilder::open_default_stream().expect("open default stream");
+        Self { stream }
+    }
+
+    pub fn play_sound(&self) {
+        let sink = Sink::connect_new(&self.stream.mixer());
+        let source = SineWave::new(440.0)
+            .take_duration(Duration::from_millis(50))
+            .amplify(0.20);
+        sink.append(source);
+        sink.detach();
+    }
+}
+
 pub struct Timers {
     delay_timer: Arc<Mutex<u8>>,
     sound_timer: Arc<Mutex<u8>>,
 }
 
 impl Timers {
-    pub fn new() -> Self {
+    pub fn new(mute: bool) -> Self {
         let delay_timer = Arc::new(Mutex::new(0));
         let sound_timer = Arc::new(Mutex::new(0));
 
         let delay_clone = Arc::clone(&delay_timer);
         let sound_clone = Arc::clone(&sound_timer);
+
+        let sounds = if !mute {
+            Some(Sounds::new())
+        } else {
+            None
+        };
 
         thread::spawn(move || {
             loop {
@@ -28,7 +58,10 @@ impl Timers {
                 if let Ok(mut sound) = sound_clone.lock() {
                     if *sound > 0 {
                         *sound -= 1;
-                        // TODO: Play sound
+                        match sounds {
+                            Some(ref s) => s.play_sound(),
+                            None => {}
+                        };
                     }
                 }
             }

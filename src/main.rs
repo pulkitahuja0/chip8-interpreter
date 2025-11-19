@@ -43,6 +43,9 @@ struct Args {
     #[arg(long, default_value_t = 500)]
     #[arg(help = "Set the instruction speed in Hz")]
     cpu_hz: u32,
+    #[arg(short, long, default_value_t = false)]
+    #[arg(help = "Mute sound output")]
+    mute: bool,
 }
 
 fn main() {
@@ -61,6 +64,7 @@ fn main() {
         fx1e_overflow: args.flag_fx1e_overflow,
         shift_in_place_8xy: args.shift_in_place_8xy,
         increment_i_on_mem: args.increment_i_on_mem,
+        mute: args.mute,
     };
 
     let mut cpu = Chip8::new(&buffer, config);
@@ -77,8 +81,10 @@ fn main() {
         match cpu.step() {
             Ok(()) => {}
             Err(err) => {
-                if !args.skip_bad_opcodes {
-                    panic!("Err: {}", err)
+                if args.skip_bad_opcodes && err.starts_with("Bad opcode") {
+                    continue;
+                } else {
+                    panic!("Err: {}", err);
                 }
             }
         }
