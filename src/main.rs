@@ -2,6 +2,7 @@ use std::{
     fs::File,
     io::Read,
     path::PathBuf,
+    sync::atomic::AtomicBool,
     time::{Duration, Instant},
 };
 
@@ -48,7 +49,14 @@ struct Args {
     mute: bool,
 }
 
+static TERMINATE: AtomicBool = AtomicBool::new(false);
+
 fn main() {
+    ctrlc::set_handler(|| {
+        TERMINATE.store(true, std::sync::atomic::Ordering::Relaxed);
+    })
+    .expect("Error setting Ctrl-C handler");
+
     let args = Args::parse();
     let mut buffer = [0u8; 3584];
     let mut file = File::open(&args.file)
@@ -73,6 +81,10 @@ fn main() {
     let mut last_cycle = Instant::now();
 
     loop {
+        if TERMINATE.load(std::sync::atomic::Ordering::Relaxed) {
+            cpu.clean_up().unwrap();
+            break;
+        }
         let elapsed = last_cycle.elapsed();
         if elapsed < cycle_duration {
             std::thread::sleep(cycle_duration - elapsed);
@@ -81,7 +93,7 @@ fn main() {
         match cpu.step() {
             Ok(()) => {}
             Err(err) => {
-                if args.skip_bad_opcodes && err.starts_with("Bad opcode") {
+                if args.skip_bad_opcodes && err.starts_with("bad opcode") {
                     continue;
                 } else {
                     panic!("Err: {}", err);

@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use rodio::{OutputStream, Sink};
 use rodio::source::{SineWave, Source};
+use rodio::{OutputStream, Sink};
 
 struct Sounds {
     stream: OutputStream,
@@ -39,11 +39,7 @@ impl Timers {
         let delay_clone = Arc::clone(&delay_timer);
         let sound_clone = Arc::clone(&sound_timer);
 
-        let sounds = if !mute {
-            Some(Sounds::new())
-        } else {
-            None
-        };
+        let sounds = if !mute { Some(Sounds::new()) } else { None };
 
         thread::spawn(move || {
             loop {

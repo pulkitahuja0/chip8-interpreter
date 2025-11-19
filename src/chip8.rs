@@ -21,7 +21,7 @@ pub struct Chip8 {
 }
 
 fn opcode_error(opcode: u16, pc: u16) -> String {
-    sub_error(opcode, pc, "Bad opcode")
+    sub_error(opcode, pc, "bad opcode")
 }
 
 fn sub_error(opcode: u16, pc: u16, error: &str) -> String {
@@ -84,6 +84,10 @@ impl Chip8 {
             hardware: Hardware::new(),
             timers: Timers::new(mute),
         }
+    }
+
+    pub fn clean_up(&mut self) -> Result<(), &'static str> {
+        self.hardware.clean_up()
     }
 
     pub fn step(&mut self) -> Result<(), String> {

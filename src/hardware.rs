@@ -40,6 +40,7 @@ impl Display {
 pub struct Hardware {
     stdout: Stdout,
     display: Display,
+    old_dimensions: (usize, usize),
 }
 
 fn value_to_char(value: u8) -> Result<char, &'static str> {
@@ -89,6 +90,7 @@ fn char_to_value(c: char) -> Result<u8, &'static str> {
 impl Hardware {
     pub fn new() -> Self {
         let mut stdout = io::stdout();
+        let old_dimensions = term_size::dimensions().expect("Unable to get terminal size");
         stdout.queue(terminal::SetSize(64, 32)).unwrap();
         stdout
             .queue(terminal::SetTitle("CHIP-8 Interpreter"))
@@ -96,6 +98,7 @@ impl Hardware {
         Self {
             stdout,
             display: Display::new(),
+            old_dimensions,
         }
     }
 
@@ -245,5 +248,21 @@ impl Hardware {
         }
 
         pixels
+    }
+
+    pub fn clean_up(&mut self) -> Result<(), &'static str> {
+        // Clears, and resizes terminal
+        match self.stdout.execute(terminal::ScrollDown(32)) {
+            Ok(_stdout) => {
+                match self.stdout.execute(terminal::SetSize(
+                    self.old_dimensions.0 as u16,
+                    self.old_dimensions.1 as u16,
+                )) {
+                    Ok(_) => Ok(()),
+                    Err(_err) => Err("Failed to restore terminal size"),
+                }
+            }
+            Err(_err) => Err("Failed to scroll terminal"),
+        }
     }
 }
