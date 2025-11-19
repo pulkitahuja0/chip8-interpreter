@@ -259,10 +259,10 @@ impl Hardware {
                     self.old_dimensions.1 as u16,
                 )) {
                     Ok(_) => Ok(()),
-                    Err(_err) => Err("clean up set size error"),
+                    Err(_err) => Err("Failed to restore terminal size"),
                 }
             }
-            Err(_err) => Err("clean up clear display error"),
+            Err(_err) => Err("Failed to scroll terminal"),
         }
     }
 }
