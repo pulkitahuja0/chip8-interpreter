@@ -246,4 +246,12 @@ impl Hardware {
 
         pixels
     }
+
+    pub fn clean_up(&mut self) -> Result<(), &'static str> {
+        // TODO: Undo resizing terminal state
+        match self.stdout.execute(terminal::ScrollDown(32)) {
+            Ok(_stdout) => Ok(()),
+            Err(_err) => Err("clean up clear display error")
+        }
+    }
 }

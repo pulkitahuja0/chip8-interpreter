@@ -86,6 +86,10 @@ impl Chip8 {
         }
     }
 
+    pub fn clean_up(&mut self) -> Result<(), &'static str> {
+        self.hardware.clean_up()
+    }
+
     pub fn step(&mut self) -> Result<(), String> {
         let opcode = ((self.memory[self.pc as usize] as u16) << 8)
             | (self.memory[(self.pc + 1) as usize] as u16);
