@@ -39,7 +39,11 @@ impl Timers {
         let delay_clone = Arc::clone(&delay_timer);
         let sound_clone = Arc::clone(&sound_timer);
 
-        let sounds = Sounds::new();
+        let sounds = if !mute {
+            Some(Sounds::new())
+        } else {
+            None
+        };
 
         thread::spawn(move || {
             loop {
@@ -54,9 +58,10 @@ impl Timers {
                 if let Ok(mut sound) = sound_clone.lock() {
                     if *sound > 0 {
                         *sound -= 1;
-                        if !mute {
-                            sounds.play_sound();
-                        }
+                        match sounds {
+                            Some(ref s) => s.play_sound(),
+                            None => {}
+                        };
                     }
                 }
             }
