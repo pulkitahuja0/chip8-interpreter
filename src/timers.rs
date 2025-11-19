@@ -22,7 +22,7 @@ impl Sounds {
             .take_duration(Duration::from_millis(50))
             .amplify(0.20);
         sink.append(source);
-        sink.sleep_until_end();
+        sink.detach();
     }
 }
 
