@@ -11,28 +11,44 @@ use crossterm::{
 };
 
 struct Display {
-    buffer: [[bool; 64]; 32], // TODO: bit pack u8 array instead
+    buffer: [[u8; 8]; 32], // TODO: bit pack u8 array instead
 }
 
 impl Display {
     pub fn new() -> Self {
         Self {
-            buffer: [[false; 64]; 32],
+            buffer: [[0; 8]; 32],
         }
     }
 
     pub fn clear(&mut self) {
-        self.buffer = [[false; 64]; 32]
+        self.buffer = [[0; 8]; 32]
     }
 
     pub fn set(&mut self, x: u8, y: u8, pixel: bool) -> bool {
-        let curr = self.buffer[y as usize][x as usize];
-        self.buffer[y as usize][x as usize] ^= pixel;
+        let curr = self.get_bit(x as usize, y as usize);
+        self.set_bit(x as usize, y as usize, curr ^ pixel);
         curr && pixel
     }
 
     pub fn get(&self, x: u8, y: u8) -> bool {
-        self.buffer[y as usize][x as usize]
+        self.get_bit(x as usize, y as usize)
+    }
+
+    fn get_bit(&self, x: usize, y: usize) -> bool {
+        let byte = self.buffer[y][x / 8];
+        let bit = x % 8;
+        (byte & (1 << bit)) != 0
+    }
+
+    fn set_bit(&mut self, x: usize, y: usize, value: bool) {
+        let byte = &mut self.buffer[y][x / 8];
+        let bit = x % 8;
+        if value {
+            *byte |= 1 << bit;
+        } else {
+            *byte &= !(1 << bit);
+        }
     }
 }
 
