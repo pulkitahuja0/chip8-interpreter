@@ -11,7 +11,7 @@ use crossterm::{
 };
 
 struct Display {
-    buffer: [[u8; 8]; 32], // TODO: bit pack u8 array instead
+    buffer: [[u8; 8]; 32],
 }
 
 impl Display {
